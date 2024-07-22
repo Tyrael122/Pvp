@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matchmaking API</title>
+</head>
+<body>
+<h1>Matchmaking API</h1>
+
+<div>
+    <label for="playerId">Player ID:</label>
+    <input type="number" id="playerId" name="playerId">
+    PVP:
+    <span id="pvpState">OFF</span>
+</div>
+
+<button onclick="addPlayer()">PVP ON</button>
+<button onclick="removePlayer()">PVP OFF</button>
+<button onclick="getPlayer()">Get Player</button>
+<button onclick="getMatch()">Get Match</button>
+<button onclick="getRank()">Get Rank</button>
+<button onclick="startMatches()">Start matches</button>
+
+<pre id="result"></pre>
+
+<script src="client.js"></script>
+</body>
+</html>

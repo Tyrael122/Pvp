@@ -1,0 +1,77 @@
+750 450 - 600
+650 550 - 500
+550 450 - 400
+
+750 650 - 600
+550 450 - 500
+450 350 - 400
+
+750 650 - 600
+550 450 - 500
+700 100 - 400
+
+750 650
+600 500
+450 350
+
+750 700
+710 600
+600 500
+
+ao servidor ligar, buscar times para parear. iniciar thread de pareamento que vai ficar rodando vendo se tem time pra mergear
+
+unit tests:
+elo rating calculation:
+- test if the rating is calculated correctly when the team is losing
+- test if the rating is calculated correctly when the team is winning
+- test if the rating is calculated correctly when the team is drawing
+ranking service
+matchmaking service:
+- test if it can pair two teams correctly when there are only two teams, same level
+- test if it can pair two teams correctly when there are more than two teams, same level
+- test if it can pair two teams correctly when there are more than two teams, not in same level
+- test if it doesnt pair two incompatible teams
+- test if it can pair two imcopatible teams taking into account the time they have been waiting
+- test if it ignores a player that has already been queued
+- test if it ignores a player that has already been queued in a team
+- test if it ignores a player that has already been queued in a team that is already in a ready match
+- test if it can remove a player from the queue
+- test if it can remove a player from a formed team
+- test if it can remove a player from a ready match
+- test if it can form multiple matches
+match service:
+- test if starts matches correctly
+- test if ends matches correctly
+- test if it can calculate the next match end time correctly
+
+tests to make manually:
+
+
+50
+70
+90
+100 - md1
+80
+
+considerations to reflect upon:
+should manual test interface be implemented? yes, send to him later.
+
+should we try to make the loss and winning points not static, but based on the current ratings?
+try to make elo rating dynamic, with premade formulas.
+establish max or min points to be won or lost in a match.
+
+obs/possibility:
+streak bonus.
+when losing or winning, start a losing or a winning streak, up to 10 points. increase 2 points in the streak for each win or loss.
+10, 20, 30, 40, 50, 60, 70 max percentage of the points to be won or lost.
+if breaking a streak, zero the streak.
+
+what happens in a draw?
+everybody wins some points (no more, draw score is determined by elo system)
+
+md1 to up rank.
+when getting to 90 points, round to 100 to up rank in md1.
+when losing, dont round.
+
+todo:
+divisions
