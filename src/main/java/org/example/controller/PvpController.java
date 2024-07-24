@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.AskForWinnerCalculator;
 import org.example.draftactual.interfaces.MatchService;
 import org.example.draftactual.interfaces.MatchmakingService;
@@ -12,31 +13,39 @@ import org.example.draftactual.services.VersusEloRatingService;
 import org.example.draftactual.services.VersusMatchService;
 import org.example.draftactual.matchmaking.VersusMatchmakingService;
 import org.example.draftactual.services.VersusRankingService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 @CrossOrigin
 @RestController
+@Slf4j
 public class PvpController {
     private static final RankingService rankingService = new VersusRankingService();
 
     private static final MatchmakingService matchmakingService = new VersusMatchmakingService();
     private static final MatchService matchService = new VersusMatchService(new AskForWinnerCalculator(), new VersusEloRatingService(), rankingService);
 
-    //    private final List<Player> players = createSamplePlayers();
     private final List<Player> players = new ArrayList<>();
+
+    public PvpController() {
+        LocalDateTime nextMatchEndTime = matchService.calculateNextMatchEndTime();
+        if (nextMatchEndTime != null) {
+            ThreadManager.scheduleNewThreadToEndMatch(PvpController::endMatches, nextMatchEndTime);
+        }
+
+        ThreadManager.scheduleNewThreadToStartMatchPeriodically(this::formMatches);
+    }
 
     @PostMapping("turn-on-pvp")
     public void turnOnPvp(@RequestParam long id) {
+        log.info("Request to turn on PVP for player {}.", id);
+
         Player player = findById(id);
         if (player == null) {
             player = new Player(id);
@@ -44,33 +53,39 @@ public class PvpController {
             players.add(player);
         }
 
-//        player.setAutoQueueOn(true);
+        player.setAutoQueueOn(true);
 
-        System.out.println("Player " + id + " turned on PVP.");
+        log.info("PVP turned on for player {}", id);
 
-        matchmakingService.queuePlayer(player);
+        matchmakingService.queuePlayers(List.of(player));
         rankingService.addPlayers(List.of(player));
     }
 
     @PostMapping("turn-off-pvp")
     public void turnOffPvp(@RequestParam long id) {
+        log.info("Request to turn off PVP for player {}.", id);
+
         Player player = findById(id);
         if (player == null) {
-            System.out.println("Player " + id + " not found.");
+            log.info("Player {} not found.", id);
 
             return;
         }
 
-//        player.setAutoQueueOn(false);
+        player.setAutoQueueOn(false);
 
-        System.out.println("Player " + id + " turned off PVP.");
+        log.info("Player {} turned off PVP.", id);
 
-        matchmakingService.unqueuePlayer(player);
+        matchmakingService.unqueuePlayers(List.of(player));
     }
 
     @GetMapping("/me")
     public String getPlayer(@RequestParam long id) {
         Player player = findById(id);
+        if (player == null) {
+            return "Player not found.";
+        }
+
         return "Your id: " + player.getId() + "\nYour rank: " + player.getRank() + "\nYour rating: " + player.getRating() + "\nIs auto queuing on: " + player.isAutoQueueOn();
     }
 
@@ -88,57 +103,39 @@ public class PvpController {
 
     @GetMapping("/rank")
     public String getRank() {
+        log.info("Request to fetch ranking.");
+
         return "Current ranking:\n" + buildRankingList();
     }
 
     @PostMapping("/start-matches")
     public void formMatches() {
         boolean isMatchReady = matchmakingService.isMatchReady();
-        System.out.println("Is match ready: " + isMatchReady);
 
         while (isMatchReady) {
             List<Team> teams = matchmakingService.fetchTeamsForMatch();
             matchService.startMatch(teams);
 
-            System.out.println("Match started: " + teams.get(0).getPlayers() + " vs " + teams.get(1).getPlayers());
-
-            scheduleNewThreadToEndMatch();
+            ThreadManager.scheduleNewThreadToEndMatch(PvpController::endMatches, matchService.calculateNextMatchEndTime());
 
             isMatchReady = matchmakingService.isMatchReady();
         }
     }
 
-    private void scheduleNewThreadToEndMatch() {
-        LocalDateTime nextMatchEndTime = matchService.calculateNextMatchEndTime();
-        try (ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1)) {
-            scheduler.schedule(PvpController::endMatches, getDelay(nextMatchEndTime), TimeUnit.SECONDS);
-        }
-    }
-
     private static void endMatches() {
-        try {
-            List<Match> endedMatches = matchService.endMatchesReadyToEnd();
-            System.out.println("Matches ended: " + endedMatches.size());
+        List<Match> endedMatches = matchService.endMatchesReadyToEnd();
 
-            for (Match matches : endedMatches) {
-                for (Team team : matches.getTeams()) {
-                    for (Player player : team.getPlayers()) {
-                        if (player.isAutoQueueOn()) {
-                            matchmakingService.queuePlayer(player);
+        for (Match matches : endedMatches) {
+            for (Team team : matches.getTeams()) {
+                for (Player player : team.getPlayers()) {
+                    if (player.isAutoQueueOn()) {
+                        matchmakingService.queuePlayers(List.of(player));
 
-                            System.out.println("Player " + player.getId() + " auto queued.");
-                        }
+                        log.info("Player {} auto queued.", player.getId());
                     }
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-    }
-
-    private static long getDelay(LocalDateTime nextMatchEndTime) {
-        ZonedDateTime zdt = nextMatchEndTime.atZone(ZoneId.systemDefault());
-        return zdt.toEpochSecond() - ZonedDateTime.now().toEpochSecond();
     }
 
     private Player findById(long id) {

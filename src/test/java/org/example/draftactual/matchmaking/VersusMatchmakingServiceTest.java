@@ -5,13 +5,16 @@ import org.example.draftactual.model.Player;
 import org.example.draftactual.model.Team;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class VersusMatchmakingServiceTest {
 
-    private MatchmakingService matchmakingService = new VersusMatchmakingService();
+    private int lastIdUsed = 0;
+
+    private final MatchmakingService matchmakingService = new VersusMatchmakingService(3);
 
     @Test
     void shouldPair6IntoTeamAndLeaveOneInQueue() {
@@ -26,7 +29,7 @@ class VersusMatchmakingServiceTest {
 
         assertFalse(matchmakingService.isMatchReady());
 
-        assertThrows(IllegalStateException.class, () -> matchmakingService.fetchTeamsForMatch());
+        assertThrows(IllegalStateException.class, matchmakingService::fetchTeamsForMatch);
     }
 
     @Test
@@ -36,30 +39,88 @@ class VersusMatchmakingServiceTest {
         assertTrue(matchmakingService.isMatchReady());
 
         List<Team> teams = matchmakingService.fetchTeamsForMatch();
-        assertEquals(6, teams.size());
-        assertEquals(3, teams.get(0).getPlayers().size());
-        assertEquals(3, teams.get(1).getPlayers().size());
-        assertEquals(3, teams.get(2).getPlayers().size());
-        assertEquals(3, teams.get(3).getPlayers().size());
-        assertEquals(3, teams.get(4).getPlayers().size());
-        assertEquals(3, teams.get(5).getPlayers().size());
+        assertEquals(2, teams.size());
+        assertEquals(3, teams.getFirst().getPlayers().size());
+        assertEquals(3, teams.getLast().getPlayers().size());
+
+        teams = matchmakingService.fetchTeamsForMatch();
+        assertEquals(2, teams.size());
+        assertEquals(3, teams.getFirst().getPlayers().size());
+        assertEquals(3, teams.getLast().getPlayers().size());
+
+        teams = matchmakingService.fetchTeamsForMatch();
+        assertEquals(2, teams.size());
+        assertEquals(3, teams.getFirst().getPlayers().size());
+        assertEquals(3, teams.getLast().getPlayers().size());
 
         assertFalse(matchmakingService.isMatchReady());
 
-        assertThrows(IllegalStateException.class, () -> matchmakingService.fetchTeamsForMatch());
+        assertThrows(IllegalStateException.class, matchmakingService::fetchTeamsForMatch);
+    }
+
+    @Test
+    void shouldNotStartMatchWhenPlayersAreTooFarApart() {
+        queueNPlayers(3, 500);
+        queueNPlayers(3, 3000);
+
+        assertFalse(matchmakingService.isMatchReady());
+
+        assertThrows(IllegalStateException.class, matchmakingService::fetchTeamsForMatch);
+    }
+
+    @Test
+    void shouldStartMatchWhenUnqueuingPlayerAndQueuingAgain() {
+        Player player1 = createPlayer(500);
+        matchmakingService.queuePlayers(List.of(player1));
+
+        queueNPlayers(2, 500);
+        queueNPlayers(3, 500);
+
+        assertTrue(matchmakingService.isMatchReady());
+
+        matchmakingService.unqueuePlayers(List.of(player1));
+
+        assertFalse(matchmakingService.isMatchReady());
+
+        matchmakingService.queuePlayers(List.of(player1));
+
+        assertTrue(matchmakingService.isMatchReady());
+
+        List<Team> teams = matchmakingService.fetchTeamsForMatch();
+        assertEquals(2, teams.size());
+        assertEquals(3, teams.getFirst().getPlayers().size());
+        assertEquals(3, teams.getLast().getPlayers().size());
+
+        assertFalse(matchmakingService.isMatchReady());
+    }
+
+    @Test
+    void shouldQueueAndUnqueuePlayerAndMatchShouldntStart() {
+        queueNPlayers(5, 1000);
+
+        assertFalse(matchmakingService.isMatchReady());
+
+        Player player = createPlayer(1000);
+        matchmakingService.queuePlayers(List.of(player));
+        matchmakingService.unqueuePlayers(List.of(player));
+
+        assertFalse(matchmakingService.isMatchReady());
     }
 
     private void queueNPlayers(int x) {
-        for (int i = 0; i < x; i++) {
-            matchmakingService.queuePlayer(createPlayer(i));
-        }
+        queueNPlayers(x, 1000);
     }
 
+    private void queueNPlayers(int x, double rating) {
+        List<Player> players = new ArrayList<>();
+        for (int i = 0; i < x; i++) {
+            players.add(createPlayer(rating));
+        }
 
-    private Player createPlayer(int id) {
-        Player player = new Player();
-        player.setId(id);
+        matchmakingService.queuePlayers(players);
+    }
 
-        return player;
+    private Player createPlayer(double rating) {
+        return new Player(lastIdUsed++, rating);
     }
 }

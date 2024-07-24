@@ -1,5 +1,6 @@
 package org.example.draftactual.matchmaking;
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.draftactual.interfaces.MatchmakingService;
 import org.example.draftactual.model.Player;
 import org.example.draftactual.model.Range;
@@ -9,6 +10,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
+@Slf4j
 public class VersusMatchmakingService implements MatchmakingService {
     private final List<WaitingTeam> waitingTeams = new ArrayList<>();
     private final List<WaitingTeam> completeWaitingTeams = new ArrayList<>();
@@ -22,17 +24,23 @@ public class VersusMatchmakingService implements MatchmakingService {
     }
 
     public VersusMatchmakingService(int numUsersInTeam) {
-        NUM_USERS_IN_TEAM = numUsersInTeam;
+        this.NUM_USERS_IN_TEAM = numUsersInTeam;
     }
 
     @Override
-    public void queuePlayer(Player player) {
-        System.out.println("Request to queue player: " + player);
+    public void queuePlayers(List<Player> players) {
+        for (Player player : players) {
+            queuePlayer(player);
+        }
+    }
+
+    private void queuePlayer(Player player) {
+        log.debug("Request to queue player: {}", player);
 
         WaitingPlayer waitingPlayer = new WaitingPlayer(player, LocalDateTime.now());
 
         WaitingTeam waitingTeam = new WaitingTeam();
-        waitingTeam.addPlayer(waitingPlayer);
+        waitingTeam.getWaitingPlayers().add(waitingPlayer);
 
         if (waitingTeam.getWaitingPlayers().size() == NUM_USERS_IN_TEAM) {
             completeWaitingTeams.add(waitingTeam);
@@ -42,29 +50,44 @@ public class VersusMatchmakingService implements MatchmakingService {
     }
 
     @Override
-    public void unqueuePlayer(Player player) {
-        waitingTeams.removeIf(team -> team.containsPlayer(player));
-        completeWaitingTeams.removeIf(team -> team.containsPlayer(player));
-
-        for (List<Team> match : readyMatches) {
-            for (Team team : match) {
-                if (team.getPlayers().contains(player)) {
-                    readyMatches.remove(match);
-                    break;
-                }
-            }
+    public void unqueuePlayers(List<Player> players) {
+        for (Player player : players) {
+            unqueuePlayer(player);
         }
+    }
+
+    private void unqueuePlayer(Player player) {
+        log.debug("Request to unqueue player: {}", player);
+
+        boolean hasFoundPlayerAtReadyMatches = removeFromReadyMatches(player);
+        if (hasFoundPlayerAtReadyMatches) {
+
+            return;
+        }
+
+        boolean hasFoundPlayerAtCompleteWaitingTeams = removeFromCompleteWaitingTeams(player);
+        if (hasFoundPlayerAtCompleteWaitingTeams) {
+            return;
+        }
+
+        removeFromWaitingTeams(player);
     }
 
     @Override
     public boolean isMatchReady() {
+        log.debug("Checking if match is ready.");
+
         if (!readyMatches.isEmpty()) {
             return true;
         }
 
         tryToFormMatches();
 
-        return !readyMatches.isEmpty();
+        boolean isMatchReady = !readyMatches.isEmpty();
+
+        log.debug("Is match ready: {}", isMatchReady);
+
+        return isMatchReady;
     }
 
     @Override
@@ -94,7 +117,7 @@ public class VersusMatchmakingService implements MatchmakingService {
 
             if (canTeamsMatch(team1, team2)) {
                 while (team1.getWaitingPlayers().size() < NUM_USERS_IN_TEAM && !team2.getWaitingPlayers().isEmpty()) {
-                    team1.addPlayer(team2.removePlayer(0));
+                    team1.getWaitingPlayers().add(team2.removePlayer(0));
                 }
 
                 if (team1.getWaitingPlayers().size() == NUM_USERS_IN_TEAM) {
@@ -117,14 +140,14 @@ public class VersusMatchmakingService implements MatchmakingService {
 
         List<List<Team>> readyTeams = new ArrayList<>();
 
-        for (int i = 0; i < completeWaitingTeams.size() - 1; i++) {
+        for (int i = completeWaitingTeams.size() - 1; i > 0; i--) {
             WaitingTeam team1 = completeWaitingTeams.get(i);
-            WaitingTeam team2 = completeWaitingTeams.get(i + 1);
+            WaitingTeam team2 = completeWaitingTeams.get(i - 1);
 
             if (canTeamsMatch(team1, team2)) {
-                completeWaitingTeams.remove(i + 1);
                 completeWaitingTeams.remove(i);
-                i -= 2;
+                completeWaitingTeams.remove(i - 1);
+                i--;
 
                 readyTeams.add(List.of(team1.toTeam(), team2.toTeam()));
             }
@@ -138,10 +161,8 @@ public class VersusMatchmakingService implements MatchmakingService {
     }
 
     private boolean canTeamsMatch(WaitingTeam team1, WaitingTeam team2) {
-        System.out.println("Can teams match: " + team1 + " vs " + team2);
-
-        System.out.println("Team 1 range: " + calculateRatingRange(team1));
-        System.out.println("Team 2 range: " + calculateRatingRange(team2));
+        team1.bufferAverageRating();
+        team2.bufferAverageRating();
 
         return calculateRatingRange(team1).overlap(calculateRatingRange(team2));
     }
@@ -159,5 +180,58 @@ public class VersusMatchmakingService implements MatchmakingService {
         double upper = rating + fixedDeviation + deviation;
 
         return new Range(lower, upper);
+    }
+
+    private boolean removeFromReadyMatches(Player player) {
+        for (int i = 0; i < readyMatches.size(); i++) {
+            List<Team> teams = readyMatches.get(i);
+
+            var teamWithPlayerToRemove = teams.stream().filter(team -> team.getPlayers().contains(player)).findFirst();
+
+            if (teamWithPlayerToRemove.isPresent()) {
+                teamWithPlayerToRemove.get().getPlayers().remove(player);
+
+                for (Team team : teams) {
+                    queuePlayers(team.getPlayers());
+                }
+
+                readyMatches.remove(i);
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean removeFromCompleteWaitingTeams(Player player) {
+        for (int i = 0; i < completeWaitingTeams.size(); i++) {
+            WaitingTeam team = completeWaitingTeams.get(i);
+
+            if (team.getPlayers().contains(player)) {
+                team.removePlayer(player);
+
+                queuePlayers(team.getPlayers());
+
+                completeWaitingTeams.remove(i);
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void removeFromWaitingTeams(Player player) {
+        for (int i = 0; i < waitingTeams.size(); i++) {
+            WaitingTeam team = waitingTeams.get(i);
+            if (team.getPlayers().contains(player)) {
+                team.removePlayer(player);
+
+                waitingTeams.remove(i);
+
+                return;
+            }
+        }
     }
 }

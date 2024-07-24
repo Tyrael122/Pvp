@@ -21,6 +21,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         document.getElementById("pvpState").innerText = "ON";
 
+        var button = document.getElementById("pvp-button");
+        button.innerText = "Turn off PvP"
+        button.onclick = removePlayer;
+
         fetchData(`/turn-on-pvp?id=${playerId}`, { method: 'POST' });
     };
 
@@ -32,6 +36,10 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         document.getElementById("pvpState").innerText = "OFF";
+
+        var button = document.getElementById("pvp-button");
+        button.innerText = "Turn on PvP"
+        button.onclick = addPlayer;
 
         fetchData(`/turn-off-pvp?id=${playerId}`, { method: 'POST' });
     };

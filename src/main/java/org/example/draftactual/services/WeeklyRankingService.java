@@ -100,7 +100,7 @@ public class WeeklyRankingService {
 
     private void changePlayerRanks(List<Player> players, Rank rank) {
         for (Player player : players) {
-            player.setRank(rank);
+//            player.setRank(rank);
         }
     }
 

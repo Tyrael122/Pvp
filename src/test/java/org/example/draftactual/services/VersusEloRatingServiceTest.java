@@ -53,8 +53,9 @@ class VersusEloRatingServiceTest {
     }
 
     private Player createPlayer(double rating) {
-        Player player = new Player();
+        Player player = new Player(0);
         player.setRating(rating);
+
         return player;
     }
 }

@@ -6,8 +6,8 @@ import org.example.draftactual.model.Team;
 import java.util.List;
 
 public interface MatchmakingService {
-    void queuePlayer(Player player); // TODO: Make this accept a list of players.
-    void unqueuePlayer(Player player); // TODO: Make this accept a list of players.
+    void queuePlayers(List<Player> players);
+    void unqueuePlayers(List<Player> players);
     boolean isMatchReady();
     List<Team> fetchTeamsForMatch() throws IllegalStateException;
 }

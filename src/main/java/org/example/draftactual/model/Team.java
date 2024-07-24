@@ -2,7 +2,7 @@ package org.example.draftactual.model;
 
 import lombok.Data;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -15,7 +15,7 @@ public class Team {
     }
 
     public Team(List<Player> players) {
-        this.players = players;
+        this.players = new ArrayList<>(players);
     }
 
     public double calculateAverageRating() {

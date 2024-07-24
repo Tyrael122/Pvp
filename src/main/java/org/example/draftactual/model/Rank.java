@@ -2,6 +2,9 @@ package org.example.draftactual.model;
 
 import lombok.Getter;
 
+import java.util.Arrays;
+import java.util.List;
+
 @Getter
 public enum Rank {
     UNRANKED,
@@ -23,6 +26,8 @@ public enum Rank {
     MASTER,
     GRANDMASTER;
 
+    public static final List<Rank> orderedRanks = buildOrderedRanks();
+
     private final boolean isDivision;
 
     Rank() {
@@ -31,5 +36,9 @@ public enum Rank {
 
     Rank(boolean isDivision) {
         this.isDivision = isDivision;
+    }
+
+    public static List<Rank> buildOrderedRanks() {
+        return Arrays.asList(Rank.values()).reversed();
     }
 }

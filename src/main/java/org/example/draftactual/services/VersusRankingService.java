@@ -12,13 +12,22 @@ public class VersusRankingService implements RankingService {
     // TODO: Use a database. This is just for demonstration purposes. In the repository interface implementation, you can add some caching if needed.
     private final Map<Long, Player> playerCache = new HashMap<>();
 
-    private static final Map<Integer, Rank> rankLowerBoundaries = createRankLowerBoundaries();
-    private static final List<Integer> reversedLowerBoundaries = rankLowerBoundaries.keySet().stream().sorted().toList().reversed();
+    private final Map<Integer, Rank> rankLowerBoundaries;
+    private final List<Integer> reversedLowerBoundaries;
+
+    public VersusRankingService() {
+        this(createRankLowerBoundaries());
+    }
+
+    public VersusRankingService(Map<Integer, Rank> rankLowerBoundaries) {
+        this.rankLowerBoundaries = rankLowerBoundaries;
+        this.reversedLowerBoundaries = rankLowerBoundaries.keySet().stream().sorted().toList().reversed();
+    }
 
     @Override
     public void addPlayers(List<Player> players) {
         for (Player player : players) {
-            savePlayer(player);
+            savePlayer(player.clone());
         }
 
         updateRankings(players);
@@ -40,7 +49,15 @@ public class VersusRankingService implements RankingService {
     @Override
     public void updateRankings(List<Player> players) {
         for (Player player : players) {
-            updateRanking(player);
+            Player playerWithOldRating = findById(player.getId());
+            Player playerWithNewRating = player.clone();
+
+            removeFromRanking(playerWithOldRating);
+
+            Rank newRank = calculateRank(playerWithNewRating.getRating());
+            addToRanking(playerWithNewRating, newRank);
+
+            savePlayer(playerWithNewRating);
         }
     }
 
@@ -48,7 +65,7 @@ public class VersusRankingService implements RankingService {
     public List<Player> getRanking() {
         List<Player> result = new ArrayList<>();
 
-        for (Rank rank : ranking.keySet()) {
+        for (Rank rank : Rank.orderedRanks) {
             result.addAll(ranking.get(rank));
         }
 
@@ -65,26 +82,15 @@ public class VersusRankingService implements RankingService {
         return new ArrayList<>(players);
     }
 
-    private void updateRanking(Player player) {
-        System.out.println("Updating ranking for player: " + player);
-
-        Player existingPlayer = findById(player.getId());
-
-        removeFromRanking(existingPlayer);
-
-        Rank newRank = calculateRank(player.getRating());
-        existingPlayer = existingPlayer.withRank(newRank);
-
-        addToRanking(existingPlayer, newRank);
-        savePlayer(existingPlayer);
-
-        System.out.println(player + " is now " + newRank);
-    }
-
     private void removeFromRanking(Player player) {
-        if (player.getRank() != null) {
-            ranking.get(player.getRank()).remove(player);
+        if (player.getRank() == null) {
+            return;
         }
+
+        Set<Player> rankingSet = ranking.get(player.getRank());
+        if (rankingSet == null) return;
+
+        rankingSet.remove(player);
     }
 
     private void addToRanking(Player player, Rank newRank) {
@@ -93,6 +99,8 @@ public class VersusRankingService implements RankingService {
         }
 
         ranking.get(newRank).add(player);
+
+        player.setRank(newRank);
     }
 
     private Player findById(long id) {
@@ -142,6 +150,6 @@ public class VersusRankingService implements RankingService {
     }
 
     private Set<Player> createSortedSet() {
-        return new TreeSet<>(Comparator.comparingDouble(Player::getRating).reversed().thenComparing(Player::getId));
+        return new TreeSet<>(Comparator.comparing(Player::getRating).reversed().thenComparing(Player::getId));
     }
 }

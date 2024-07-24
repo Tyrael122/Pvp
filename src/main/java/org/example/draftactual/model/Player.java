@@ -1,17 +1,19 @@
 package org.example.draftactual.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.With;
+import lombok.Data;
 
-@Getter
-@With
+@Data
+@AllArgsConstructor
 @Builder(toBuilder = true)
-public final class Player {
+public class Player implements Cloneable {
     private final long id;
-    private final Rank rank;
-    private final double rating;
-    private final boolean isAutoQueueOn = true;
+    private Rank rank;
+    private double rating;
+
+    @Builder.Default
+    private boolean isAutoQueueOn = true;
 
     public Player(long id) {
         this.id = id;
@@ -19,12 +21,19 @@ public final class Player {
         this.rating = 1500;
     }
 
-    public Player(long id, Rank rank, double rating) {
-        this.id = id;
-        this.rank = rank;
+    public Player(long id, double rating) {
+        this(id);
+
         this.rating = rating;
     }
 
+    public Player(long id, Rank rank, double rating) {
+        this(id, rating);
+
+        this.rank = rank;
+    }
+
+    @Override
     public Player clone() {
         Player player;
         try {

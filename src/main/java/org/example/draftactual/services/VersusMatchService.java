@@ -1,5 +1,6 @@
 package org.example.draftactual.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.draftactual.interfaces.EloRatingService;
 import org.example.draftactual.interfaces.MatchService;
 import org.example.draftactual.interfaces.RankingService;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 public class VersusMatchService implements MatchService {
     private final List<Match> currentMatches = new ArrayList<>();
 
@@ -32,6 +34,8 @@ public class VersusMatchService implements MatchService {
         match.start(LocalDateTime.now().plusSeconds(5));
 
         currentMatches.add(match);
+
+        log.debug("Match started: {}", match);
     }
 
     @Override
@@ -51,6 +55,8 @@ public class VersusMatchService implements MatchService {
 
     @Override
     public List<Match> endMatchesReadyToEnd() {
+        log.debug("Checking form matches ready to end.");
+
         List<Match> endedMatches = new ArrayList<>();
 
         Match match = currentMatches.getFirst();
@@ -61,7 +67,8 @@ public class VersusMatchService implements MatchService {
             updateRankings(match);
 
             match.end(winner);
-            System.out.println("Match ended: " + match);
+
+            log.debug("Match ended: {}", match);
 
             endedMatches.add(currentMatches.removeFirst());
 
@@ -72,13 +79,15 @@ public class VersusMatchService implements MatchService {
             match = currentMatches.getFirst();
         }
 
-        System.out.println("Ended matches: " + endedMatches.size());
-
         return endedMatches;
     }
 
     @Override
     public LocalDateTime calculateNextMatchEndTime() {
+        if (currentMatches.isEmpty()) {
+            return null;
+        }
+
         return currentMatches.getFirst().getScheduledEndTime();
     }
 
