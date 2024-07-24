@@ -66,6 +66,10 @@ public class VersusRankingService implements RankingService {
         List<Player> result = new ArrayList<>();
 
         for (Rank rank : Rank.orderedRanks) {
+            if (!ranking.containsKey(rank)) {
+                continue;
+            }
+
             result.addAll(ranking.get(rank));
         }
 
