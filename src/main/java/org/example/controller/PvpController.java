@@ -1,45 +1,65 @@
 package org.example.controller;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.AskForWinnerCalculator;
-import org.example.draftactual.interfaces.MatchService;
-import org.example.draftactual.interfaces.MatchmakingService;
-import org.example.draftactual.interfaces.RankingService;
-import org.example.draftactual.model.Match;
-import org.example.draftactual.model.Player;
-import org.example.draftactual.model.Rank;
-import org.example.draftactual.model.Team;
-import org.example.draftactual.services.VersusEloRatingService;
-import org.example.draftactual.services.VersusMatchService;
-import org.example.draftactual.matchmaking.VersusMatchmakingService;
-import org.example.draftactual.services.VersusRankingService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.example.pvp.interfaces.MatchService;
+import org.example.pvp.interfaces.MatchmakingService;
+import org.example.pvp.interfaces.RankingService;
+import org.example.pvp.model.Match;
+import org.example.pvp.model.Player;
+import org.example.pvp.model.Rank;
+import org.example.pvp.model.Team;
+import org.example.pvp.stats.RankingStatistics;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 @CrossOrigin
 @RestController
 @Slf4j
 public class PvpController {
-    private static final RankingService rankingService = new VersusRankingService();
-
-    private static final MatchmakingService matchmakingService = new VersusMatchmakingService();
-    private static final MatchService matchService = new VersusMatchService(new AskForWinnerCalculator(), new VersusEloRatingService(), rankingService);
+    private final RankingService rankingService;
+    private final MatchmakingService matchmakingService;
+    private final MatchService matchService;
 
     private final List<Player> players = new ArrayList<>();
 
-    public PvpController() {
+    public PvpController(RankingService rankingService, MatchmakingService matchmakingService, MatchService matchService) {
+        this.rankingService = rankingService;
+        this.matchmakingService = matchmakingService;
+        this.matchService = matchService;
+
+        initializeThreads();
+    }
+
+    private void initializeThreads() {
         LocalDateTime nextMatchEndTime = matchService.calculateNextMatchEndTime();
         if (nextMatchEndTime != null) {
-            ThreadManager.scheduleNewThreadToEndMatch(PvpController::endMatches, nextMatchEndTime);
+            ThreadManager.scheduleNewThreadToEndMatch(this::endMatches, nextMatchEndTime);
         }
 
         ThreadManager.scheduleNewThreadToStartMatchPeriodically(this::formMatches);
+    }
+
+    @PostMapping("auto-create-bulk-players")
+    public void create10Players(@RequestParam int numPlayers) {
+        for (int i = 0; i < numPlayers; i++) {
+            turnOnPvpCreatingPlayer();
+        }
+    }
+
+    // TODO: Demo purposes. Remove this endpoint in production.
+    @PostMapping("auto-create-player")
+    public long turnOnPvpCreatingPlayer() {
+        long maxId = players.stream().mapToLong(Player::getId).max().orElse(0);
+        long newId = maxId + 1;
+
+        players.add(new Player(newId));
+
+        turnOnPvp(newId);
+
+        return newId;
     }
 
     @PostMapping("turn-on-pvp")
@@ -111,18 +131,35 @@ public class PvpController {
     @PostMapping("/start-matches")
     public void formMatches() {
         boolean isMatchReady = matchmakingService.isMatchReady();
+        if (!isMatchReady) {
+            return;
+        }
 
+        List<List<Team>> matches = new ArrayList<>();
         while (isMatchReady) {
             List<Team> teams = matchmakingService.fetchTeamsForMatch();
-            matchService.startMatch(teams);
-
-            ThreadManager.scheduleNewThreadToEndMatch(PvpController::endMatches, matchService.calculateNextMatchEndTime());
+            matches.add(teams);
 
             isMatchReady = matchmakingService.isMatchReady();
         }
+
+        for (List<Team> teams : matches) {
+            matchService.startMatch(teams);
+        }
+
+        ThreadManager.scheduleNewThreadToEndMatch(this::endMatches, matchService.calculateNextMatchEndTime());
+
+//        while (isMatchReady) {
+//            List<Team> teams = matchmakingService.fetchTeamsForMatch();
+//            matchService.startMatch(teams);
+//
+//            ThreadManager.scheduleNewThreadToEndMatch(this::endMatches, matchService.calculateNextMatchEndTime());
+//
+//            isMatchReady = matchmakingService.isMatchReady();
+//        }
     }
 
-    private static void endMatches() {
+    private void endMatches() {
         List<Match> endedMatches = matchService.endMatchesReadyToEnd();
 
         for (Match matches : endedMatches) {

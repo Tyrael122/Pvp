@@ -7,16 +7,21 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             const data = await response.text();
             document.getElementById("result").textContent = data;
+            return data;
         } catch (error) {
             document.getElementById("result").textContent = `Error: ${error.message}`;
         }
     }
 
-    window.addPlayer = function () {
+    function addPlayer() {
         const playerId = document.getElementById("playerId").value;
         if (!playerId) {
-            alert("Please enter a Player ID.");
-            return;
+            const newPlayerId = fetchData(`/auto-create-player`, { method: 'POST' });
+            newPlayerId.then((id) => {
+                document.getElementById("playerId").value = id;
+            });
+        } else {
+            fetchData(`/turn-on-pvp?id=${playerId}`, { method: 'POST' });
         }
 
         document.getElementById("pvpState").innerText = "ON";
@@ -24,9 +29,9 @@ document.addEventListener("DOMContentLoaded", function () {
         var button = document.getElementById("pvp-button");
         button.innerText = "Turn off PvP"
         button.onclick = removePlayer;
-
-        fetchData(`/turn-on-pvp?id=${playerId}`, { method: 'POST' });
     };
+
+    window.addPlayer = addPlayer;
 
     window.removePlayer = function () {
         const playerId = document.getElementById("playerId").value;
@@ -71,4 +76,6 @@ document.addEventListener("DOMContentLoaded", function () {
     window.getRank = function () {
         fetchData(`/rank`);
     };
+
+    addPlayer();
 });

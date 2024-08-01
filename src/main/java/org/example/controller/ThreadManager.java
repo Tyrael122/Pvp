@@ -31,7 +31,7 @@ public class ThreadManager {
 
         Runnable task = wrapRunnableWithTryCatch(runnable, "Trying to form matches automatically");
 
-        scheduler.scheduleWithFixedDelay(task, 30L, 30L, TimeUnit.SECONDS);
+        scheduler.scheduleWithFixedDelay(task, 10L, 3L, TimeUnit.SECONDS);
     }
 
     private static Runnable wrapRunnableWithTryCatch(Runnable runnable, String taskDescription) {
@@ -44,7 +44,7 @@ public class ThreadManager {
                 log.info("{} finished at {}.", taskDescription, LocalDateTime.now());
             } catch (Exception e) {
                 log.error("Error while {} at {}.", taskDescription, LocalDateTime.now());
-                log.debug("Error details: ", e);
+                log.error("Error details: ", e);
             }
         };
     }
