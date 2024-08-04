@@ -1,9 +1,9 @@
 package org.example.pvp.interfaces;
 
-import org.example.pvp.model.Team;
+import org.example.pvp.model.MatchGroup;
 
 import java.util.List;
 
 public interface WinnerCalculator {
-    Team calculateWinner(List<Team> teams);
+    MatchGroup calculateWinner(List<MatchGroup> matchGroups);
 }

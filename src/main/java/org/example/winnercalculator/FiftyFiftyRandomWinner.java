@@ -1,7 +1,7 @@
 package org.example.winnercalculator;
 
 import org.example.pvp.interfaces.WinnerCalculator;
-import org.example.pvp.model.Team;
+import org.example.pvp.model.MatchGroup;
 
 import java.util.List;
 
@@ -10,14 +10,14 @@ public class FiftyFiftyRandomWinner implements WinnerCalculator {
     private static final int C_FACTOR = 150;
 
     @Override
-    public Team calculateWinner(List<Team> teams) {
+    public MatchGroup calculateWinner(List<MatchGroup> matchGroups) {
         // Give more probability to the team with the highest rating.
-        double expectedOutcome = calculateExpectedOutcome(teams.getFirst().calculateAverageRating(), teams.getLast().calculateAverageRating());
+        double expectedOutcome = calculateExpectedOutcome(matchGroups.getFirst().calculateAverageRating(), matchGroups.getLast().calculateAverageRating());
 
         if (Math.random() < expectedOutcome) {
-            return teams.getFirst();
+            return matchGroups.getFirst();
         } else {
-            return teams.getLast();
+            return matchGroups.getLast();
         }
     }
 

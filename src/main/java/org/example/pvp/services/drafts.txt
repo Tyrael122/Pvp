@@ -22,22 +22,22 @@ ao servidor ligar, buscar times para parear. iniciar thread de pareamento que va
 
 unit tests:
 elo rating calculation:
-- test if the rating is calculated correctly when the team is losing
-- test if the rating is calculated correctly when the team is winning
-- test if the rating is calculated correctly when the team is drawing
+- test if the rating is calculated correctly when the matchGroup is losing
+- test if the rating is calculated correctly when the matchGroup is winning
+- test if the rating is calculated correctly when the matchGroup is drawing
 ranking service
 matchmaking service:
-- test if it can pair two teams correctly when there are only two teams, same level
-- test if it can pair two teams correctly when there are more than two teams, same level
-- test if it can pair two teams correctly when there are more than two teams, not in same level
-- test if it doesnt pair two incompatible teams
-- test if it can pair two imcopatible teams taking into account the time they have been waiting
-- test if it ignores a player that has already been queued
-- test if it ignores a player that has already been queued in a team
-- test if it ignores a player that has already been queued in a team that is already in a ready match
-- test if it can remove a player from the queue
-- test if it can remove a player from a formed team
-- test if it can remove a player from a ready match
+- test if it can pair two matchGroups correctly when there are only two matchGroups, same level
+- test if it can pair two matchGroups correctly when there are more than two matchGroups, same level
+- test if it can pair two matchGroups correctly when there are more than two matchGroups, not in same level
+- test if it doesnt pair two incompatible matchGroups
+- test if it can pair two imcopatible matchGroups taking into account the time they have been waiting
+- test if it ignores a matchmakingProfile that has already been queued
+- test if it ignores a matchmakingProfile that has already been queued in a matchGroup
+- test if it ignores a matchmakingProfile that has already been queued in a matchGroup that is already in a ready match
+- test if it can remove a matchmakingProfile from the queue
+- test if it can remove a matchmakingProfile from a formed matchGroup
+- test if it can remove a matchmakingProfile from a ready match
 - test if it can form multiple matches
 match service:
 - test if starts matches correctly
@@ -69,8 +69,8 @@ if breaking a streak, zero the streak.
 what happens in a draw?
 everybody wins some points (no more, draw score is determined by elo system)
 
-md1 to up rank.
-when getting to 90 points, round to 100 to up rank in md1.
+md1 to up division.
+when getting to 90 points, round to 100 to up division in md1.
 when losing, dont round.
 
 todo:

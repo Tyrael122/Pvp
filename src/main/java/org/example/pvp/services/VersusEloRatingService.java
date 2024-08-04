@@ -2,8 +2,8 @@ package org.example.pvp.services;
 
 import lombok.Getter;
 import org.example.pvp.interfaces.EloRatingService;
-import org.example.pvp.model.Player;
-import org.example.pvp.model.Team;
+import org.example.pvp.model.MatchGroup;
+import org.example.pvp.model.MatchmakingProfile;
 import org.example.pvp.stats.StatisticsService;
 
 import java.util.List;
@@ -20,16 +20,16 @@ public class VersusEloRatingService implements EloRatingService {
     }
 
     @Override
-    public List<Team> updateRatings(List<Team> teams, Team winner) {
+    public List<MatchGroup> updateRatings(List<MatchGroup> matchGroups, MatchGroup winner) {
         boolean isDraw = false;
 
         if (winner == null) {
-            winner = teams.getFirst();
+            winner = matchGroups.getFirst();
 
             isDraw = true;
         }
 
-        Team loser = findLoser(teams, winner);
+        MatchGroup loser = findLoser(matchGroups, winner);
 
         double expectedOutcomeForWinner = calculateExpectedOutcome(winner.calculateAverageRating(), loser.calculateAverageRating());
         double expectedOutcomeForLoser = 1 - expectedOutcomeForWinner;
@@ -43,18 +43,18 @@ public class VersusEloRatingService implements EloRatingService {
         statisticsService.addGainOfRating(winner.calculateAverageRating() - winnerAverageRating);
         statisticsService.addLossOfRating(loserAverageRating - loser.calculateAverageRating());
 
-        return teams;
+        return matchGroups;
     }
 
-    private Team findLoser(List<Team> teams, Team winner) {
-        return teams.stream().filter(team -> team != winner).findFirst().orElseThrow(() -> new IllegalArgumentException("Loser team not found."));
+    private MatchGroup findLoser(List<MatchGroup> matchGroups, MatchGroup winner) {
+        return matchGroups.stream().filter(team -> team != winner).findFirst().orElseThrow(() -> new IllegalArgumentException("Loser team not found."));
     }
 
-    private void updateRating(Team team, double expectedOutcome, MatchOutcome matchOutcome) {
-        double newRating = calculateNewRating(team.calculateAverageRating(), expectedOutcome, matchOutcome);
+    private void updateRating(MatchGroup matchGroup, double expectedOutcome, MatchOutcome matchOutcome) {
+        double newRating = calculateNewRating(matchGroup.calculateAverageRating(), expectedOutcome, matchOutcome);
 
-        for (Player player : team.getPlayers()) {
-            player.setRating(newRating);
+        for (MatchmakingProfile matchmakingProfile : matchGroup.getMatchmakingProfiles()) {
+            matchmakingProfile.setRating(newRating);
         }
     }
 

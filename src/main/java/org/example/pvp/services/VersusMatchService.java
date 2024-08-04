@@ -6,8 +6,8 @@ import org.example.pvp.interfaces.MatchService;
 import org.example.pvp.interfaces.RankingService;
 import org.example.pvp.interfaces.WinnerCalculator;
 import org.example.pvp.model.Match;
-import org.example.pvp.model.Player;
-import org.example.pvp.model.Team;
+import org.example.pvp.model.MatchGroup;
+import org.example.pvp.model.MatchmakingProfile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -28,8 +28,8 @@ public class VersusMatchService implements MatchService {
     }
 
     @Override
-    public void startMatch(List<Team> teams) {
-        Match match = new Match(teams);
+    public void startMatch(List<MatchGroup> matchGroups) {
+        Match match = new Match(matchGroups);
 //        match.start(LocalDateTime.now().plusHours(24));
         match.start(LocalDateTime.now().plusSeconds(1));
 
@@ -39,11 +39,11 @@ public class VersusMatchService implements MatchService {
     }
 
     @Override
-    public Match getPlayerMatch(Player player) {
+    public Match getPlayerMatch(MatchmakingProfile matchmakingProfile) {
         for (Match match : currentMatches) {
-            for (Team team : match.getTeams()) {
-                for (Player teamPlayer : team.getPlayers()) {
-                    if (teamPlayer.equals(player)) {
+            for (MatchGroup matchGroup : match.getMatchGroups()) {
+                for (MatchmakingProfile teamMatchmakingProfile : matchGroup.getMatchmakingProfiles()) {
+                    if (teamMatchmakingProfile.equals(matchmakingProfile)) {
                         return match;
                     }
                 }
@@ -61,9 +61,9 @@ public class VersusMatchService implements MatchService {
 
         Match match = currentMatches.getFirst();
         while (LocalDateTime.now().isAfter(match.getScheduledEndTime())) {
-            Team winner = winnerCalculator.calculateWinner(match.getTeams());
+            MatchGroup winner = winnerCalculator.calculateWinner(match.getMatchGroups());
 
-            eloRatingService.updateRatings(match.getTeams(), winner);
+            eloRatingService.updateRatings(match.getMatchGroups(), winner);
             updateRankings(match);
 
             match.end(winner);
@@ -92,8 +92,8 @@ public class VersusMatchService implements MatchService {
     }
 
     private void updateRankings(Match match) {
-        for (Team team : match.getTeams()) {
-            rankingService.updateRankings(team.getPlayers());
+        for (MatchGroup matchGroup : match.getMatchGroups()) {
+            rankingService.updateRankings(matchGroup.getMatchmakingProfiles());
         }
     }
 }

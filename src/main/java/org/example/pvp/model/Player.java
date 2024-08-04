@@ -1,47 +1,21 @@
 package org.example.pvp.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
-@AllArgsConstructor
-@Builder(toBuilder = true)
-public class Player implements Cloneable {
-    private final long id;
-    private Rank rank;
-    private double rating;
+@Entity
+public class Player {
 
-    @Builder.Default
-    private boolean isAutoQueueOn = true;
+    @Id
+    @GeneratedValue
+    private long id;
 
-    public Player(long id) {
-        this.id = id;
-        this.rank = Rank.UNRANKED;
-        this.rating = 180;
-    }
-
-    public Player(long id, double rating) {
-        this(id);
-
-        this.rating = rating;
-    }
-
-    public Player(long id, Rank rank, double rating) {
-        this(id, rating);
-
-        this.rank = rank;
-    }
-
-    @Override
-    public Player clone() {
-        Player player;
-        try {
-            player = (Player) super.clone();
-        } catch (CloneNotSupportedException e) {
-            throw new RuntimeException(e);
-        }
-
-        return player.toBuilder().build();
-    }
+    @OneToMany
+    private List<MatchmakingProfile> profiles;
 }

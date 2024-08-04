@@ -1,8 +1,8 @@
 package org.example.pvp.matchmaking;
 
 import lombok.Data;
-import org.example.pvp.model.Player;
-import org.example.pvp.model.Team;
+import org.example.pvp.model.MatchGroup;
+import org.example.pvp.model.MatchmakingProfile;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -20,7 +20,7 @@ class WaitingTeam {
         double sum = 0;
 
         for (WaitingPlayer player : waitingPlayers) {
-            sum += player.getPlayer().getRating();
+            sum += player.getMatchmakingProfile().getRating();
         }
 
         averageRating = sum / waitingPlayers.size();
@@ -44,15 +44,15 @@ class WaitingTeam {
         return waitingPlayers.remove(i);
     }
 
-    public void removePlayer(Player player) {
-        waitingPlayers.removeIf(waitingPlayer -> waitingPlayer.getPlayer().equals(player));
+    public void removePlayer(MatchmakingProfile matchmakingProfile) {
+        waitingPlayers.removeIf(waitingPlayer -> waitingPlayer.getMatchmakingProfile().equals(matchmakingProfile));
     }
 
-    public Team toTeam() {
-        return Team.of(getPlayers());
+    public MatchGroup toTeam() {
+        return MatchGroup.of(getPlayers());
     }
 
-    public List<Player> getPlayers() {
-        return waitingPlayers.stream().map(WaitingPlayer::getPlayer).toList();
+    public List<MatchmakingProfile> getPlayers() {
+        return waitingPlayers.stream().map(WaitingPlayer::getMatchmakingProfile).toList();
     }
 }

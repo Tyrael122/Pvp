@@ -1,8 +1,8 @@
 package org.example.pvp.services;
 
 import org.example.pvp.interfaces.RankingService;
-import org.example.pvp.model.Player;
-import org.example.pvp.model.Rank;
+import org.example.pvp.model.Division;
+import org.example.pvp.model.MatchmakingProfile;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -18,180 +18,172 @@ class VersusRankingServiceTest {
 
     @Test
     void shouldAddPlayersToRank() {
-        Player player = new Player(1, 1000);
-        List<Player> players = new ArrayList<>();
-        players.add(player);
+        MatchmakingProfile matchmakingProfile = new MatchmakingProfile(1, 50);
+        List<MatchmakingProfile> matchmakingProfiles = new ArrayList<>();
+        matchmakingProfiles.add(matchmakingProfile);
 
-        service.addPlayers(players);
+        service.addPlayers(matchmakingProfiles);
 
-        List<Player> ranking = service.getRanking(Rank.BRONZE_3);
+        List<MatchmakingProfile> ranking = service.getRanking(Division.BRONZE_2);
         assertEquals(1, ranking.size());
-        assertEquals(player.getId(), ranking.getFirst().getId());
+        assertEquals(matchmakingProfile.getId(), ranking.getFirst().getId());
     }
 
     @Test
     void shouldAdd2PlayersAndRankThem() {
-        Player player1 = new Player(1, 1000);
-        Player player2 = new Player(2, 1500);
+        MatchmakingProfile matchmakingProfile1 = new MatchmakingProfile(1, 50);
+        MatchmakingProfile matchmakingProfile2 = new MatchmakingProfile(2, 100);
 
-        List<Player> players = new ArrayList<>();
-        players.add(player1);
-        players.add(player2);
+        List<MatchmakingProfile> matchmakingProfiles = new ArrayList<>();
+        matchmakingProfiles.add(matchmakingProfile1);
+        matchmakingProfiles.add(matchmakingProfile2);
 
-        service.addPlayers(players);
+        service.addPlayers(matchmakingProfiles);
 
-        List<Player> bronzeRanking = service.getRanking(Rank.BRONZE_3);
-        List<Player> silverRanking = service.getRanking(Rank.SILVER_2);
+        List<MatchmakingProfile> bronzeRanking = service.getRanking(Division.BRONZE_2);
+        List<MatchmakingProfile> silverRanking = service.getRanking(Division.SILVER_1);
 
         assertEquals(1, bronzeRanking.size());
-        assertEquals(player1.getId(), bronzeRanking.getFirst().getId());
+        assertEquals(matchmakingProfile1.getId(), bronzeRanking.getFirst().getId());
 
         assertEquals(1, silverRanking.size());
-        assertEquals(player2.getId(), silverRanking.getFirst().getId());
+        assertEquals(matchmakingProfile2.getId(), silverRanking.getFirst().getId());
     }
 
     @Test
     void shouldAdd3PlayersAndRankThem() {
-        Player player1 = new Player(1, 1000);
-        Player player2 = new Player(2, 1500);
-        Player player3 = new Player(3, 2000);
+        MatchmakingProfile matchmakingProfile1 = new MatchmakingProfile(1, 50);
+        MatchmakingProfile matchmakingProfile2 = new MatchmakingProfile(2, 100);
+        MatchmakingProfile matchmakingProfile3 = new MatchmakingProfile(3, 200);
 
-        List<Player> players = new ArrayList<>();
-        players.add(player1);
-        players.add(player2);
-        players.add(player3);
+        List<MatchmakingProfile> matchmakingProfiles = new ArrayList<>();
+        matchmakingProfiles.add(matchmakingProfile1);
+        matchmakingProfiles.add(matchmakingProfile2);
+        matchmakingProfiles.add(matchmakingProfile3);
 
-        service.addPlayers(players);
+        service.addPlayers(matchmakingProfiles);
 
-        List<Player> bronzeRanking = service.getRanking(Rank.BRONZE_3);
-        List<Player> silverRanking = service.getRanking(Rank.SILVER_2);
-        List<Player> goldRanking = service.getRanking(Rank.GOLD_2);
+        List<MatchmakingProfile> bronzeRanking = service.getRanking(Division.BRONZE_2);
+        List<MatchmakingProfile> silverRanking = service.getRanking(Division.SILVER_1);
+        List<MatchmakingProfile> goldRanking = service.getRanking(Division.GOLD_1);
 
         assertEquals(1, bronzeRanking.size());
-        assertEquals(player1.getId(), bronzeRanking.getFirst().getId());
+        assertEquals(matchmakingProfile1.getId(), bronzeRanking.getFirst().getId());
 
         assertEquals(1, silverRanking.size());
-        assertEquals(player2.getId(), silverRanking.getFirst().getId());
+        assertEquals(matchmakingProfile2.getId(), silverRanking.getFirst().getId());
 
         assertEquals(1, goldRanking.size());
-        assertEquals(player3.getId(), goldRanking.getFirst().getId());
+        assertEquals(matchmakingProfile3.getId(), goldRanking.getFirst().getId());
     }
 
     @Test
     void shouldRemovePlayerFromRank() {
-        Player player = new Player(1, 1000);
+        MatchmakingProfile matchmakingProfile = new MatchmakingProfile(1, 50);
 
-        List<Player> players = List.of(player);
+        List<MatchmakingProfile> matchmakingProfiles = List.of(matchmakingProfile);
 
-        service.addPlayers(players);
-        service.removePlayers(players);
+        service.addPlayers(matchmakingProfiles);
+        service.removePlayers(matchmakingProfiles);
 
-        List<Player> ranking = service.getRanking(Rank.BRONZE_3);
+        List<MatchmakingProfile> ranking = service.getRanking(Division.BRONZE_2);
         assertEquals(0, ranking.size());
     }
 
     @Test
     void shouldRemovePlayerFromRankAndRankThem() {
-        Player player1 = new Player(1, 1000);
-        Player player2 = new Player(2, 1100);
+        MatchmakingProfile matchmakingProfile1 = new MatchmakingProfile(1, 50);
+        MatchmakingProfile matchmakingProfile2 = new MatchmakingProfile(2, 60);
 
-        List<Player> players = new ArrayList<>();
-        players.add(player1);
-        players.add(player2);
+        List<MatchmakingProfile> matchmakingProfiles = new ArrayList<>();
+        matchmakingProfiles.add(matchmakingProfile1);
+        matchmakingProfiles.add(matchmakingProfile2);
 
-        service.addPlayers(players);
+        service.addPlayers(matchmakingProfiles);
 
-        List<Player> ranking = service.getRanking(Rank.BRONZE_3);
+        List<MatchmakingProfile> ranking = service.getRanking(Division.BRONZE_2);
 
         assertEquals(2, ranking.size());
-        assertEquals(player2.getId(), ranking.getFirst().getId());
+        assertEquals(matchmakingProfile2.getId(), ranking.getFirst().getId());
 
-        service.removePlayers(List.of(player2));
+        service.removePlayers(List.of(matchmakingProfile2));
 
-        ranking = service.getRanking(Rank.BRONZE_3);
+        ranking = service.getRanking(Division.BRONZE_2);
         assertEquals(1, ranking.size());
-        assertEquals(player1.getId(), ranking.getFirst().getId());
+        assertEquals(matchmakingProfile1.getId(), ranking.getFirst().getId());
     }
 
     @Test
     void shouldUpdate1PlayerRanking() {
-        Player player = new Player(1, 1000);
-        List<Player> players = List.of(player);
+        MatchmakingProfile matchmakingProfile = new MatchmakingProfile(1, 260);
+        List<MatchmakingProfile> matchmakingProfiles = List.of(matchmakingProfile);
 
-        service.addPlayers(players);
+        service.addPlayers(matchmakingProfiles);
 
-        player.setRating(2000); // Update the rating
-        service.updateRankings(players);
+        matchmakingProfile.setRating(240); // Update the rating
+        service.updateRankings(matchmakingProfiles);
 
-        List<Player> ranking = service.getRanking(Rank.GOLD_2);
+        List<MatchmakingProfile> ranking = service.getRanking(Division.GOLD_1);
         assertEquals(1, ranking.size());
-        assertEquals(player.getId(), ranking.getFirst().getId());
+        assertEquals(matchmakingProfile.getId(), ranking.getFirst().getId());
     }
 
     @Test
     void shouldUpdate2PlayersRanking() {
-        Player player1 = new Player(1, 1000);
-        Player player2 = new Player(2, 1100);
+        MatchmakingProfile matchmakingProfile1 = new MatchmakingProfile(1, 50);
+        MatchmakingProfile matchmakingProfile2 = new MatchmakingProfile(2, 60);
 
-        List<Player> players = new ArrayList<>();
-        players.add(player1);
-        players.add(player2);
+        List<MatchmakingProfile> matchmakingProfiles = new ArrayList<>();
+        matchmakingProfiles.add(matchmakingProfile1);
+        matchmakingProfiles.add(matchmakingProfile2);
 
-        service.addPlayers(players);
+        service.addPlayers(matchmakingProfiles);
 
-        player1.setRating(3800); // Update the rating
-        player2.setRating(3700); // Update the rating
+        matchmakingProfile1.setRating(75); // Update the rating
+        matchmakingProfile2.setRating(70); // Update the rating
 
-        service.updateRankings(players);
+        service.updateRankings(matchmakingProfiles);
 
-        List<Player> ranking = service.getRanking(Rank.DIAMOND_2);
+        List<MatchmakingProfile> ranking = service.getRanking(Division.BRONZE_2);
 
         assertEquals(2, ranking.size());
-        assertEquals(player1.getId(), ranking.getFirst().getId());
-        assertEquals(player2.getId(), ranking.getLast().getId());
+        assertEquals(matchmakingProfile1.getId(), ranking.getFirst().getId());
+        assertEquals(matchmakingProfile2.getId(), ranking.getLast().getId());
     }
 
     @Test
     void shouldGetAllRanking() {
-        Player player1 = new Player(1, 1000);
-        Player player2 = new Player(2, 1100);
-        Player player3 = new Player(3, 1200);
+        MatchmakingProfile matchmakingProfile1 = new MatchmakingProfile(1, 50);
+        MatchmakingProfile matchmakingProfile2 = new MatchmakingProfile(2, 60);
+        MatchmakingProfile matchmakingProfile3 = new MatchmakingProfile(3, 70);
 
-        List<Player> players = new ArrayList<>();
-        players.add(player1);
-        players.add(player2);
-        players.add(player3);
+        List<MatchmakingProfile> matchmakingProfiles = new ArrayList<>();
+        matchmakingProfiles.add(matchmakingProfile1);
+        matchmakingProfiles.add(matchmakingProfile2);
+        matchmakingProfiles.add(matchmakingProfile3);
 
-        service.addPlayers(players);
+        service.addPlayers(matchmakingProfiles);
 
-        List<Player> ranking = service.getRanking();
+        List<MatchmakingProfile> ranking = service.getRanking();
 
         assertEquals(3, ranking.size());
-        assertEquals(player3.getId(), ranking.get(0).getId());
-        assertEquals(player2.getId(), ranking.get(1).getId());
-        assertEquals(player1.getId(), ranking.get(2).getId());
+        assertEquals(matchmakingProfile3.getId(), ranking.get(0).getId());
+        assertEquals(matchmakingProfile2.getId(), ranking.get(1).getId());
+        assertEquals(matchmakingProfile1.getId(), ranking.get(2).getId());
     }
 
-    private static Map<Integer, Rank> createRankLowerBoundaries() {
-        Map<Integer, Rank> rankBoundaries = new HashMap<>();
+    private static Map<Integer, Division> createRankLowerBoundaries() {
+        Map<Integer, Division> rankBoundaries = new HashMap<>();
 
-        rankBoundaries.put(0, Rank.BRONZE_1);
-        rankBoundaries.put(500, Rank.BRONZE_2);
-        rankBoundaries.put(1000, Rank.BRONZE_3);
-        rankBoundaries.put(1200, Rank.SILVER_1);
-        rankBoundaries.put(1400, Rank.SILVER_2);
-        rankBoundaries.put(1600, Rank.SILVER_3);
-        rankBoundaries.put(1800, Rank.GOLD_1);
-        rankBoundaries.put(2000, Rank.GOLD_2);
-        rankBoundaries.put(2200, Rank.GOLD_3);
-        rankBoundaries.put(2400, Rank.PLATINUM_1);
-        rankBoundaries.put(2600, Rank.PLATINUM_2);
-        rankBoundaries.put(2800, Rank.PLATINUM_3);
-        rankBoundaries.put(3200, Rank.DIAMOND_1);
-        rankBoundaries.put(3600, Rank.DIAMOND_2);
-        rankBoundaries.put(4000, Rank.DIAMOND_3);
-        rankBoundaries.put(4400, Rank.MASTER);
-        rankBoundaries.put(4800, Rank.GRANDMASTER);
+        rankBoundaries.put(0, Division.BRONZE_1);
+        rankBoundaries.put(50, Division.BRONZE_2);
+        rankBoundaries.put(100, Division.SILVER_1);
+        rankBoundaries.put(150, Division.SILVER_2);
+        rankBoundaries.put(200, Division.GOLD_1);
+        rankBoundaries.put(250, Division.GOLD_2);
+        rankBoundaries.put(300, Division.PLATINUM_1);
+        rankBoundaries.put(350, Division.PLATINUM_2);
+        rankBoundaries.put(400, Division.MASTER);
 
         return rankBoundaries;
     }

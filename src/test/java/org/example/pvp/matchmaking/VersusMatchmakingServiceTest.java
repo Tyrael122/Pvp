@@ -1,8 +1,8 @@
 package org.example.pvp.matchmaking;
 
 import org.example.pvp.interfaces.MatchmakingService;
-import org.example.pvp.model.Player;
-import org.example.pvp.model.Team;
+import org.example.pvp.model.MatchGroup;
+import org.example.pvp.model.MatchmakingProfile;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -22,10 +22,10 @@ class VersusMatchmakingServiceTest {
 
         assertTrue(matchmakingService.isMatchReady());
 
-        List<Team> teams = matchmakingService.fetchTeamsForMatch();
-        assertEquals(2, teams.size());
-        assertEquals(3, teams.getFirst().getPlayers().size());
-        assertEquals(3, teams.getLast().getPlayers().size());
+        List<MatchGroup> matchGroups = matchmakingService.fetchTeamsForMatch();
+        assertEquals(2, matchGroups.size());
+        assertEquals(3, matchGroups.getFirst().getMatchmakingProfiles().size());
+        assertEquals(3, matchGroups.getLast().getMatchmakingProfiles().size());
 
         assertFalse(matchmakingService.isMatchReady());
 
@@ -38,20 +38,20 @@ class VersusMatchmakingServiceTest {
 
         assertTrue(matchmakingService.isMatchReady());
 
-        List<Team> teams = matchmakingService.fetchTeamsForMatch();
-        assertEquals(2, teams.size());
-        assertEquals(3, teams.getFirst().getPlayers().size());
-        assertEquals(3, teams.getLast().getPlayers().size());
+        List<MatchGroup> matchGroups = matchmakingService.fetchTeamsForMatch();
+        assertEquals(2, matchGroups.size());
+        assertEquals(3, matchGroups.getFirst().getMatchmakingProfiles().size());
+        assertEquals(3, matchGroups.getLast().getMatchmakingProfiles().size());
 
-        teams = matchmakingService.fetchTeamsForMatch();
-        assertEquals(2, teams.size());
-        assertEquals(3, teams.getFirst().getPlayers().size());
-        assertEquals(3, teams.getLast().getPlayers().size());
+        matchGroups = matchmakingService.fetchTeamsForMatch();
+        assertEquals(2, matchGroups.size());
+        assertEquals(3, matchGroups.getFirst().getMatchmakingProfiles().size());
+        assertEquals(3, matchGroups.getLast().getMatchmakingProfiles().size());
 
-        teams = matchmakingService.fetchTeamsForMatch();
-        assertEquals(2, teams.size());
-        assertEquals(3, teams.getFirst().getPlayers().size());
-        assertEquals(3, teams.getLast().getPlayers().size());
+        matchGroups = matchmakingService.fetchTeamsForMatch();
+        assertEquals(2, matchGroups.size());
+        assertEquals(3, matchGroups.getFirst().getMatchmakingProfiles().size());
+        assertEquals(3, matchGroups.getLast().getMatchmakingProfiles().size());
 
         assertFalse(matchmakingService.isMatchReady());
 
@@ -70,26 +70,26 @@ class VersusMatchmakingServiceTest {
 
     @Test
     void shouldStartMatchWhenUnqueuingPlayerAndQueuingAgain() {
-        Player player1 = createPlayer(500);
-        matchmakingService.queuePlayers(List.of(player1));
+        MatchmakingProfile matchmakingProfile1 = createPlayer(500);
+        matchmakingService.queuePlayers(List.of(matchmakingProfile1));
 
         queueNPlayers(2, 500);
         queueNPlayers(3, 500);
 
         assertTrue(matchmakingService.isMatchReady());
 
-        matchmakingService.unqueuePlayers(List.of(player1));
+        matchmakingService.unqueuePlayers(List.of(matchmakingProfile1));
 
         assertFalse(matchmakingService.isMatchReady());
 
-        matchmakingService.queuePlayers(List.of(player1));
+        matchmakingService.queuePlayers(List.of(matchmakingProfile1));
 
         assertTrue(matchmakingService.isMatchReady());
 
-        List<Team> teams = matchmakingService.fetchTeamsForMatch();
-        assertEquals(2, teams.size());
-        assertEquals(3, teams.getFirst().getPlayers().size());
-        assertEquals(3, teams.getLast().getPlayers().size());
+        List<MatchGroup> matchGroups = matchmakingService.fetchTeamsForMatch();
+        assertEquals(2, matchGroups.size());
+        assertEquals(3, matchGroups.getFirst().getMatchmakingProfiles().size());
+        assertEquals(3, matchGroups.getLast().getMatchmakingProfiles().size());
 
         assertFalse(matchmakingService.isMatchReady());
     }
@@ -100,9 +100,9 @@ class VersusMatchmakingServiceTest {
 
         assertFalse(matchmakingService.isMatchReady());
 
-        Player player = createPlayer(1000);
-        matchmakingService.queuePlayers(List.of(player));
-        matchmakingService.unqueuePlayers(List.of(player));
+        MatchmakingProfile matchmakingProfile = createPlayer(1000);
+        matchmakingService.queuePlayers(List.of(matchmakingProfile));
+        matchmakingService.unqueuePlayers(List.of(matchmakingProfile));
 
         assertFalse(matchmakingService.isMatchReady());
     }
@@ -112,15 +112,15 @@ class VersusMatchmakingServiceTest {
     }
 
     private void queueNPlayers(int x, double rating) {
-        List<Player> players = new ArrayList<>();
+        List<MatchmakingProfile> matchmakingProfiles = new ArrayList<>();
         for (int i = 0; i < x; i++) {
-            players.add(createPlayer(rating));
+            matchmakingProfiles.add(createPlayer(rating));
         }
 
-        matchmakingService.queuePlayers(players);
+        matchmakingService.queuePlayers(matchmakingProfiles);
     }
 
-    private Player createPlayer(double rating) {
-        return new Player(lastIdUsed++, rating);
+    private MatchmakingProfile createPlayer(double rating) {
+        return new MatchmakingProfile(lastIdUsed++, rating);
     }
 }

@@ -7,9 +7,9 @@ import java.util.List;
 
 @Data
 public class Match {
-    private List<Team> teams;
+    private List<MatchGroup> matchGroups;
 
-    private Team winner;
+    private MatchGroup winner;
 
     private MatchStatus matchStatus;
 
@@ -17,8 +17,8 @@ public class Match {
     private LocalDateTime scheduledEndTime;
     private LocalDateTime endTime;
 
-    public Match(List<Team> teams) {
-        this.teams = teams;
+    public Match(List<MatchGroup> matchGroups) {
+        this.matchGroups = matchGroups;
     }
 
     public void start(LocalDateTime scheduledEndTime) {
@@ -32,7 +32,7 @@ public class Match {
         end(null);
     }
 
-    public void end(Team winner) {
+    public void end(MatchGroup winner) {
         this.endTime = LocalDateTime.now();
         this.matchStatus = MatchStatus.FINISHED;
         this.winner = winner;

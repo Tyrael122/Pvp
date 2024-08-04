@@ -1,7 +1,7 @@
 package org.example.pvp.services;
 
-import org.example.pvp.model.Player;
-import org.example.pvp.model.Rank;
+import org.example.pvp.model.Division;
+import org.example.pvp.model.MatchmakingProfile;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -17,42 +17,42 @@ public class WeeklyRankingServiceTest {
 
     @Test
     public void testMoveUpAndDown() {
-        List<Player> players = new ArrayList<>();
-        players.add(new Player(0, Rank.BRONZE_2, 1200));
-        players.add(new Player(1, Rank.BRONZE_2, 1100));
-        players.add(new Player(2, Rank.BRONZE_2, 1000));
+        List<MatchmakingProfile> matchmakingProfiles = new ArrayList<>();
+        matchmakingProfiles.add(new MatchmakingProfile(0, Division.BRONZE_2, 1200));
+        matchmakingProfiles.add(new MatchmakingProfile(1, Division.BRONZE_2, 1100));
+        matchmakingProfiles.add(new MatchmakingProfile(2, Division.BRONZE_2, 1000));
 
-        players.add(new Player(3, Rank.BRONZE_1, 820));
-        players.add(new Player(4, Rank.BRONZE_1, 810));
-        players.add(new Player(5, Rank.BRONZE_1, 800));
+        matchmakingProfiles.add(new MatchmakingProfile(3, Division.BRONZE_1, 820));
+        matchmakingProfiles.add(new MatchmakingProfile(4, Division.BRONZE_1, 810));
+        matchmakingProfiles.add(new MatchmakingProfile(5, Division.BRONZE_1, 800));
 
-        rankingService.addPlayers(players);
+        rankingService.addPlayers(matchmakingProfiles);
         rankingService.rankPlayers();
 
-        List<Player> bronze1Ranking = rankingService.getRanking(Rank.BRONZE_1);
+        List<MatchmakingProfile> bronze1Ranking = rankingService.getRanking(Division.BRONZE_1);
         assertEquals(1, bronze1Ranking.get(0).getId());
         assertEquals(2, bronze1Ranking.get(1).getId());
 
-        List<Player> bronze2Ranking = rankingService.getRanking(Rank.BRONZE_2);
+        List<MatchmakingProfile> bronze2Ranking = rankingService.getRanking(Division.BRONZE_2);
         assertEquals(3, bronze2Ranking.get(1).getId());
         assertEquals(4, bronze2Ranking.get(2).getId());
     }
 
     @Test
     public void testMoveOnlyUpWhenUpperDoesntHaveEnoughPlayersToMoveDown() {
-        List<Player> players = new ArrayList<>();
-        players.add(new Player(0, Rank.BRONZE_1, 1200));
-        players.add(new Player(1, Rank.BRONZE_1, 1100));
-        players.add(new Player(2, Rank.BRONZE_1, 1000));
+        List<MatchmakingProfile> matchmakingProfiles = new ArrayList<>();
+        matchmakingProfiles.add(new MatchmakingProfile(0, Division.BRONZE_1, 1200));
+        matchmakingProfiles.add(new MatchmakingProfile(1, Division.BRONZE_1, 1100));
+        matchmakingProfiles.add(new MatchmakingProfile(2, Division.BRONZE_1, 1000));
 
-        rankingService.addPlayers(players);
+        rankingService.addPlayers(matchmakingProfiles);
         rankingService.rankPlayers();
 
-        List<Player> bronze1Ranking = rankingService.getRanking(Rank.BRONZE_1);
+        List<MatchmakingProfile> bronze1Ranking = rankingService.getRanking(Division.BRONZE_1);
         assertEquals(1, bronze1Ranking.size());
         assertEquals(2, bronze1Ranking.get(0).getId());
 
-        List<Player> bronze2Ranking = rankingService.getRanking(Rank.BRONZE_2);
+        List<MatchmakingProfile> bronze2Ranking = rankingService.getRanking(Division.BRONZE_2);
         assertEquals(2, bronze2Ranking.size());
         assertEquals(0, bronze2Ranking.get(0).getId());
         assertEquals(1, bronze2Ranking.get(1).getId());
@@ -60,19 +60,19 @@ public class WeeklyRankingServiceTest {
 
     @Test
     public void testMoveOnlyDownWhenLowerDoesntHaveEnoughPlayersToMoveUp() {
-        List<Player> players = new ArrayList<>();
-        players.add(new Player(0, Rank.GOLD_1, 1200));
-        players.add(new Player(1, Rank.GOLD_1, 1180));
-        players.add(new Player(2, Rank.GOLD_1, 1170));
+        List<MatchmakingProfile> matchmakingProfiles = new ArrayList<>();
+        matchmakingProfiles.add(new MatchmakingProfile(0, Division.GOLD_1, 1200));
+        matchmakingProfiles.add(new MatchmakingProfile(1, Division.GOLD_1, 1180));
+        matchmakingProfiles.add(new MatchmakingProfile(2, Division.GOLD_1, 1170));
 
-        rankingService.addPlayers(players);
+        rankingService.addPlayers(matchmakingProfiles);
         rankingService.rankPlayers();
 
-        List<Player> gold1Ranking = rankingService.getRanking(Rank.GOLD_1);
+        List<MatchmakingProfile> gold1Ranking = rankingService.getRanking(Division.GOLD_1);
         assertEquals(1, gold1Ranking.size());
         assertEquals(0, gold1Ranking.get(0).getId());
 
-        List<Player> silver3Ranking = rankingService.getRanking(Rank.SILVER_3);
+        List<MatchmakingProfile> silver3Ranking = rankingService.getRanking(Division.SILVER_2);
         assertEquals(2, silver3Ranking.size());
         assertEquals(1, silver3Ranking.get(0).getId());
         assertEquals(2, silver3Ranking.get(1).getId());

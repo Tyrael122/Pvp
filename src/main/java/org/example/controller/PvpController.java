@@ -5,25 +5,23 @@ import org.example.pvp.interfaces.MatchService;
 import org.example.pvp.interfaces.MatchmakingService;
 import org.example.pvp.interfaces.RankingService;
 import org.example.pvp.model.Match;
-import org.example.pvp.model.Player;
-import org.example.pvp.model.Rank;
-import org.example.pvp.model.Team;
-import org.example.pvp.stats.RankingStatistics;
-import org.springframework.http.ResponseEntity;
+import org.example.pvp.model.MatchGroup;
+import org.example.pvp.model.MatchmakingProfile;
+import org.example.pvp.model.Division;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
 
+@Slf4j
 @CrossOrigin
 @RestController
-@Slf4j
 public class PvpController {
     private final RankingService rankingService;
     private final MatchmakingService matchmakingService;
     private final MatchService matchService;
 
-    private final List<Player> players = new ArrayList<>();
+    private final List<MatchmakingProfile> matchmakingProfiles = new ArrayList<>();
 
     public PvpController(RankingService rankingService, MatchmakingService matchmakingService, MatchService matchService) {
         this.rankingService = rankingService;
@@ -52,10 +50,10 @@ public class PvpController {
     // TODO: Demo purposes. Remove this endpoint in production.
     @PostMapping("auto-create-player")
     public long turnOnPvpCreatingPlayer() {
-        long maxId = players.stream().mapToLong(Player::getId).max().orElse(0);
+        long maxId = matchmakingProfiles.stream().mapToLong(MatchmakingProfile::getId).max().orElse(0);
         long newId = maxId + 1;
 
-        players.add(new Player(newId));
+        matchmakingProfiles.add(new MatchmakingProfile(newId));
 
         turnOnPvp(newId);
 
@@ -66,54 +64,54 @@ public class PvpController {
     public void turnOnPvp(@RequestParam long id) {
         log.info("Request to turn on PVP for player {}.", id);
 
-        Player player = findById(id);
-        if (player == null) {
-            player = new Player(id);
+        MatchmakingProfile matchmakingProfile = findById(id);
+        if (matchmakingProfile == null) {
+            matchmakingProfile = new MatchmakingProfile(id);
 
-            players.add(player);
+            matchmakingProfiles.add(matchmakingProfile);
         }
 
-        player.setAutoQueueOn(true);
+        matchmakingProfile.setAutoQueueOn(true);
 
         log.info("PVP turned on for player {}", id);
 
-        matchmakingService.queuePlayers(List.of(player));
-        rankingService.addPlayers(List.of(player));
+        matchmakingService.queuePlayers(List.of(matchmakingProfile));
+        rankingService.addPlayers(List.of(matchmakingProfile));
     }
 
     @PostMapping("turn-off-pvp")
     public void turnOffPvp(@RequestParam long id) {
         log.info("Request to turn off PVP for player {}.", id);
 
-        Player player = findById(id);
-        if (player == null) {
+        MatchmakingProfile matchmakingProfile = findById(id);
+        if (matchmakingProfile == null) {
             log.info("Player {} not found.", id);
 
             return;
         }
 
-        player.setAutoQueueOn(false);
+        matchmakingProfile.setAutoQueueOn(false);
 
         log.info("Player {} turned off PVP.", id);
 
-        matchmakingService.unqueuePlayers(List.of(player));
+        matchmakingService.unqueuePlayers(List.of(matchmakingProfile));
     }
 
     @GetMapping("/me")
     public String getPlayer(@RequestParam long id) {
-        Player player = findById(id);
-        if (player == null) {
+        MatchmakingProfile matchmakingProfile = findById(id);
+        if (matchmakingProfile == null) {
             return "Player not found.";
         }
 
-        return "Your id: " + player.getId() + "\nYour rank: " + player.getRank() + "\nYour rating: " + player.getRating() + "\nIs auto queuing on: " + player.isAutoQueueOn();
+        return "Your id: " + matchmakingProfile.getId() + "\nYour rank: " + matchmakingProfile.getDivision() + "\nYour rating: " + matchmakingProfile.getRating() + "\nIs auto queuing on: " + matchmakingProfile.isAutoQueueOn();
     }
 
     @GetMapping("/match")
     public String getMatch(@RequestParam long id) {
-        Player player = findById(id);
+        MatchmakingProfile matchmakingProfile = findById(id);
 
-        Match match = matchService.getPlayerMatch(player);
+        Match match = matchService.getPlayerMatch(matchmakingProfile);
         if (match == null) {
             return "No match found for player " + id;
         }
@@ -135,16 +133,16 @@ public class PvpController {
             return;
         }
 
-        List<List<Team>> matches = new ArrayList<>();
+        List<List<MatchGroup>> matches = new ArrayList<>();
         while (isMatchReady) {
-            List<Team> teams = matchmakingService.fetchTeamsForMatch();
-            matches.add(teams);
+            List<MatchGroup> matchGroups = matchmakingService.fetchTeamsForMatch();
+            matches.add(matchGroups);
 
             isMatchReady = matchmakingService.isMatchReady();
         }
 
-        for (List<Team> teams : matches) {
-            matchService.startMatch(teams);
+        for (List<MatchGroup> matchGroups : matches) {
+            matchService.startMatch(matchGroups);
         }
 
         ThreadManager.scheduleNewThreadToEndMatch(this::endMatches, matchService.calculateNextMatchEndTime());
@@ -163,22 +161,22 @@ public class PvpController {
         List<Match> endedMatches = matchService.endMatchesReadyToEnd();
 
         for (Match matches : endedMatches) {
-            for (Team team : matches.getTeams()) {
-                for (Player player : team.getPlayers()) {
-                    if (player.isAutoQueueOn()) {
-                        matchmakingService.queuePlayers(List.of(player));
+            for (MatchGroup matchGroup : matches.getMatchGroups()) {
+                for (MatchmakingProfile matchmakingProfile : matchGroup.getMatchmakingProfiles()) {
+                    if (matchmakingProfile.isAutoQueueOn()) {
+                        matchmakingService.queuePlayers(List.of(matchmakingProfile));
 
-                        log.info("Player {} auto queued.", player.getId());
+                        log.info("Player {} auto queued.", matchmakingProfile.getId());
                     }
                 }
             }
         }
     }
 
-    private Player findById(long id) {
-        for (Player player : players) {
-            if (player.getId() == id) {
-                return player;
+    private MatchmakingProfile findById(long id) {
+        for (MatchmakingProfile matchmakingProfile : matchmakingProfiles) {
+            if (matchmakingProfile.getId() == id) {
+                return matchmakingProfile;
             }
         }
 
@@ -188,12 +186,12 @@ public class PvpController {
     private String buildRankingList() {
         StringBuilder rankingList = new StringBuilder();
 
-        List<Rank> ranks = Arrays.asList(Rank.values()).reversed();
-        for (Rank rank : ranks) {
-            rankingList.append(rank).append(":\n");
+        List<Division> divisions = Arrays.asList(Division.values()).reversed();
+        for (Division division : divisions) {
+            rankingList.append(division).append(":\n");
 
-            for (Player player : rankingService.getRanking(rank)) {
-                rankingList.append(player.getId()).append(": ").append(player.getRating()).append("\n");
+            for (MatchmakingProfile matchmakingProfile : rankingService.getRanking(division)) {
+                rankingList.append(matchmakingProfile.getId()).append(": ").append(matchmakingProfile.getRating()).append("\n");
             }
         }
 

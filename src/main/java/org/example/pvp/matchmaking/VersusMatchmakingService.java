@@ -1,11 +1,11 @@
 package org.example.pvp.matchmaking;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.pvp.model.MatchGroup;
+import org.example.pvp.model.MatchmakingProfile;
 import org.example.pvp.stats.StatisticsService;
 import org.example.pvp.interfaces.MatchmakingService;
-import org.example.pvp.model.Player;
 import org.example.pvp.model.Range;
-import org.example.pvp.model.Team;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -16,7 +16,7 @@ public class VersusMatchmakingService implements MatchmakingService {
     private final List<WaitingTeam> waitingTeams = new ArrayList<>();
     private final List<WaitingTeam> completeWaitingTeams = new ArrayList<>();
 
-    private final List<List<Team>> readyMatches = new ArrayList<>();
+    private final List<List<MatchGroup>> readyMatches = new ArrayList<>();
 
     private StatisticsService statisticsService;
 
@@ -33,16 +33,16 @@ public class VersusMatchmakingService implements MatchmakingService {
     }
 
     @Override
-    public void queuePlayers(List<Player> players) {
-        for (Player player : players) {
-            queuePlayer(player);
+    public void queuePlayers(List<MatchmakingProfile> matchmakingProfiles) {
+        for (MatchmakingProfile matchmakingProfile : matchmakingProfiles) {
+            queuePlayer(matchmakingProfile);
         }
     }
 
-    private void queuePlayer(Player player) {
-        log.debug("Request to queue player: {}", player);
+    private void queuePlayer(MatchmakingProfile matchmakingProfile) {
+        log.debug("Request to queue player: {}", matchmakingProfile);
 
-        WaitingPlayer waitingPlayer = new WaitingPlayer(player, LocalDateTime.now());
+        WaitingPlayer waitingPlayer = new WaitingPlayer(matchmakingProfile, LocalDateTime.now());
 
         WaitingTeam waitingTeam = new WaitingTeam();
         waitingTeam.getWaitingPlayers().add(waitingPlayer);
@@ -55,27 +55,27 @@ public class VersusMatchmakingService implements MatchmakingService {
     }
 
     @Override
-    public void unqueuePlayers(List<Player> players) {
-        for (Player player : players) {
-            unqueuePlayer(player);
+    public void unqueuePlayers(List<MatchmakingProfile> matchmakingProfiles) {
+        for (MatchmakingProfile matchmakingProfile : matchmakingProfiles) {
+            unqueuePlayer(matchmakingProfile);
         }
     }
 
-    private void unqueuePlayer(Player player) {
-        log.debug("Request to unqueue player: {}", player);
+    private void unqueuePlayer(MatchmakingProfile matchmakingProfile) {
+        log.debug("Request to unqueue player: {}", matchmakingProfile);
 
-        boolean hasFoundPlayerAtReadyMatches = removeFromReadyMatches(player);
+        boolean hasFoundPlayerAtReadyMatches = removeFromReadyMatches(matchmakingProfile);
         if (hasFoundPlayerAtReadyMatches) {
 
             return;
         }
 
-        boolean hasFoundPlayerAtCompleteWaitingTeams = removeFromCompleteWaitingTeams(player);
+        boolean hasFoundPlayerAtCompleteWaitingTeams = removeFromCompleteWaitingTeams(matchmakingProfile);
         if (hasFoundPlayerAtCompleteWaitingTeams) {
             return;
         }
 
-        removeFromWaitingTeams(player);
+        removeFromWaitingTeams(matchmakingProfile);
     }
 
     @Override
@@ -96,21 +96,21 @@ public class VersusMatchmakingService implements MatchmakingService {
     }
 
     @Override
-    public List<Team> fetchTeamsForMatch() throws IllegalStateException {
+    public List<MatchGroup> fetchTeamsForMatch() throws IllegalStateException {
         if (readyMatches.isEmpty()) {
             throw new IllegalStateException("No matches ready to be fetched.");
         }
 
-        List<Team> teams = readyMatches.removeFirst();
+        List<MatchGroup> matchGroups = readyMatches.removeFirst();
 
-        tryToDecreaseAverageRatingBetweenTeams(teams);
+        tryToDecreaseAverageRatingBetweenTeams(matchGroups);
 
-        statisticsService.addFormedMatch(teams);
+        statisticsService.addFormedMatch(matchGroups);
 
-        return teams;
+        return matchGroups;
     }
 
-    private void tryToDecreaseAverageRatingBetweenTeams(List<Team> teams) {
+    private void tryToDecreaseAverageRatingBetweenTeams(List<MatchGroup> matchGroups) {
 
     }
 
@@ -119,7 +119,7 @@ public class VersusMatchmakingService implements MatchmakingService {
 
         sortByUpperRatingLimit(completeWaitingTeams);
 
-        List<List<Team>> compatibleTeams = findCompatibleTeams();
+        List<List<MatchGroup>> compatibleTeams = findCompatibleTeams();
         readyMatches.addAll(compatibleTeams);
     }
 
@@ -148,12 +148,12 @@ public class VersusMatchmakingService implements MatchmakingService {
         }
     }
 
-    private List<List<Team>> findCompatibleTeams() {
+    private List<List<MatchGroup>> findCompatibleTeams() {
         if (completeWaitingTeams.size() < 2) {
             return List.of();
         }
 
-        List<List<Team>> readyTeams = new ArrayList<>();
+        List<List<MatchGroup>> readyTeams = new ArrayList<>();
 
         for (int i = completeWaitingTeams.size() - 1; i > 0; i--) {
             WaitingTeam team1 = completeWaitingTeams.get(i);
@@ -197,17 +197,17 @@ public class VersusMatchmakingService implements MatchmakingService {
         return new Range(lower, upper);
     }
 
-    private boolean removeFromReadyMatches(Player player) {
+    private boolean removeFromReadyMatches(MatchmakingProfile matchmakingProfile) {
         for (int i = 0; i < readyMatches.size(); i++) {
-            List<Team> teams = readyMatches.get(i);
+            List<MatchGroup> matchGroups = readyMatches.get(i);
 
-            var teamWithPlayerToRemove = teams.stream().filter(team -> team.getPlayers().contains(player)).findFirst();
+            var teamWithPlayerToRemove = matchGroups.stream().filter(team -> team.getMatchmakingProfiles().contains(matchmakingProfile)).findFirst();
 
             if (teamWithPlayerToRemove.isPresent()) {
-                teamWithPlayerToRemove.get().getPlayers().remove(player);
+                teamWithPlayerToRemove.get().getMatchmakingProfiles().remove(matchmakingProfile);
 
-                for (Team team : teams) {
-                    queuePlayers(team.getPlayers());
+                for (MatchGroup matchGroup : matchGroups) {
+                    queuePlayers(matchGroup.getMatchmakingProfiles());
                 }
 
                 readyMatches.remove(i);
@@ -219,12 +219,12 @@ public class VersusMatchmakingService implements MatchmakingService {
         return false;
     }
 
-    private boolean removeFromCompleteWaitingTeams(Player player) {
+    private boolean removeFromCompleteWaitingTeams(MatchmakingProfile matchmakingProfile) {
         for (int i = 0; i < completeWaitingTeams.size(); i++) {
             WaitingTeam team = completeWaitingTeams.get(i);
 
-            if (team.getPlayers().contains(player)) {
-                team.removePlayer(player);
+            if (team.getPlayers().contains(matchmakingProfile)) {
+                team.removePlayer(matchmakingProfile);
 
                 queuePlayers(team.getPlayers());
 
@@ -237,11 +237,11 @@ public class VersusMatchmakingService implements MatchmakingService {
         return false;
     }
 
-    private void removeFromWaitingTeams(Player player) {
+    private void removeFromWaitingTeams(MatchmakingProfile matchmakingProfile) {
         for (int i = 0; i < waitingTeams.size(); i++) {
             WaitingTeam team = waitingTeams.get(i);
-            if (team.getPlayers().contains(player)) {
-                team.removePlayer(player);
+            if (team.getPlayers().contains(matchmakingProfile)) {
+                team.removePlayer(matchmakingProfile);
 
                 waitingTeams.remove(i);
 

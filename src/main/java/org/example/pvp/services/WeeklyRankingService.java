@@ -1,139 +1,139 @@
 package org.example.pvp.services;
 
-import org.example.pvp.model.Player;
-import org.example.pvp.model.Rank;
+import org.example.pvp.model.Division;
+import org.example.pvp.model.MatchmakingProfile;
 
 import java.util.*;
 
 public class WeeklyRankingService {
-    private final Map<Rank, List<Player>> ranking = new HashMap<>();
-    private final Map<Rank, Integer> moveUpCounts = createMoveUpCounts();
-    private final Map<Rank, Integer> moveDownCounts = createMoveDownCounts();
+    private final Map<Division, List<MatchmakingProfile>> ranking = new HashMap<>();
+    private final Map<Division, Integer> moveUpCounts = createMoveUpCounts();
+    private final Map<Division, Integer> moveDownCounts = createMoveDownCounts();
 
-    public void addPlayers(List<Player> players) {
-        for (Player player : players) {
-            if (player.getRank() == null) {
+    public void addPlayers(List<MatchmakingProfile> matchmakingProfiles) {
+        for (MatchmakingProfile matchmakingProfile : matchmakingProfiles) {
+            if (matchmakingProfile.getDivision() == null) {
                 continue;
             }
 
-            if (!ranking.containsKey(player.getRank())) {
-                ranking.put(player.getRank(), new ArrayList<>());
+            if (!ranking.containsKey(matchmakingProfile.getDivision())) {
+                ranking.put(matchmakingProfile.getDivision(), new ArrayList<>());
             }
 
-            ranking.get(player.getRank()).add(player);
+            ranking.get(matchmakingProfile.getDivision()).add(matchmakingProfile);
         }
     }
 
-    public void removePlayers(List<Player> players) {
-        for (Player player : players) {
-            if (player.getRank() == null) {
+    public void removePlayers(List<MatchmakingProfile> matchmakingProfiles) {
+        for (MatchmakingProfile matchmakingProfile : matchmakingProfiles) {
+            if (matchmakingProfile.getDivision() == null) {
                 continue;
             }
 
-            if (!ranking.containsKey(player.getRank())) {
+            if (!ranking.containsKey(matchmakingProfile.getDivision())) {
                 continue;
             }
 
-            ranking.get(player.getRank()).remove(player);
+            ranking.get(matchmakingProfile.getDivision()).remove(matchmakingProfile);
         }
     }
 
     public void rankPlayers() {
-        for (Map.Entry<Rank, List<Player>> entry : ranking.entrySet()) {
+        for (Map.Entry<Division, List<MatchmakingProfile>> entry : ranking.entrySet()) {
             entry.getValue().sort((p1, p2) -> (int) (p2.getRating() - p1.getRating()));
         }
 
-        Rank[] ranks = Rank.values();
-        for (int i = 0; i < ranks.length - 1; i++) {
-            if (ranks[i] == Rank.UNRANKED) {
+        Division[] divisions = Division.values();
+        for (int i = 0; i < divisions.length - 1; i++) {
+            if (divisions[i] == Division.UNRANKED) {
                 continue;
             }
 
-            movePlayers(ranks[i], ranks[i + 1]);
+            movePlayers(divisions[i], divisions[i + 1]);
         }
     }
 
-    public List<Player> getRanking() {
-        List<Player> result = new ArrayList<>();
+    public List<MatchmakingProfile> getRanking() {
+        List<MatchmakingProfile> result = new ArrayList<>();
 
-        for (Rank rank : Rank.values()) {
-            result.addAll(ranking.getOrDefault(rank, List.of()));
+        for (Division division : Division.values()) {
+            result.addAll(ranking.getOrDefault(division, List.of()));
         }
 
         return result;
     }
 
-    public List<Player> getRanking(Rank rank) {
-        return ranking.getOrDefault(rank, List.of());
+    public List<MatchmakingProfile> getRanking(Division division) {
+        return ranking.getOrDefault(division, List.of());
     }
 
-    private void movePlayers(Rank lowerRank, Rank upperRank) {
-        List<Player> upperRankPlayers = ranking.getOrDefault(upperRank, List.of());
-        List<Player> lowerRankPlayers = ranking.getOrDefault(lowerRank, List.of());
+    private void movePlayers(Division lowerDivision, Division upperDivision) {
+        List<MatchmakingProfile> upperRankMatchmakingProfiles = ranking.getOrDefault(upperDivision, List.of());
+        List<MatchmakingProfile> lowerRankMatchmakingProfiles = ranking.getOrDefault(lowerDivision, List.of());
 
-        int moveUpCount = moveUpCounts.get(upperRank);
-        int moveDownCount = moveDownCounts.get(lowerRank);
+        int moveUpCount = moveUpCounts.get(upperDivision);
+        int moveDownCount = moveDownCounts.get(lowerDivision);
 
-        if (lowerRankPlayers.size() <= moveUpCount) {
+        if (lowerRankMatchmakingProfiles.size() <= moveUpCount) {
             moveUpCount = 0;
         }
 
-        if (upperRankPlayers.size() <= moveDownCount) {
+        if (upperRankMatchmakingProfiles.size() <= moveDownCount) {
             moveDownCount = 0;
         }
 
-        List<Player> playersGoingUp = lowerRankPlayers.subList(0, moveUpCount);
-        List<Player> playersGoingDown = upperRankPlayers.subList(upperRankPlayers.size() - moveDownCount, upperRankPlayers.size());
+        List<MatchmakingProfile> playersGoingUp = lowerRankMatchmakingProfiles.subList(0, moveUpCount);
+        List<MatchmakingProfile> playersGoingDown = upperRankMatchmakingProfiles.subList(upperRankMatchmakingProfiles.size() - moveDownCount, upperRankMatchmakingProfiles.size());
 
-        upperRankPlayers = new ArrayList<>(upperRankPlayers.subList(0, upperRankPlayers.size() - moveDownCount));
-        lowerRankPlayers = new ArrayList<>(lowerRankPlayers.subList(moveUpCount, lowerRankPlayers.size()));
+        upperRankMatchmakingProfiles = new ArrayList<>(upperRankMatchmakingProfiles.subList(0, upperRankMatchmakingProfiles.size() - moveDownCount));
+        lowerRankMatchmakingProfiles = new ArrayList<>(lowerRankMatchmakingProfiles.subList(moveUpCount, lowerRankMatchmakingProfiles.size()));
 
-        upperRankPlayers.addAll(playersGoingUp);
-        lowerRankPlayers.addAll(0, playersGoingDown);
+        upperRankMatchmakingProfiles.addAll(playersGoingUp);
+        lowerRankMatchmakingProfiles.addAll(0, playersGoingDown);
 
-        changePlayerRanks(playersGoingUp, upperRank);
-        changePlayerRanks(playersGoingDown, lowerRank);
+        changePlayerRanks(playersGoingUp, upperDivision);
+        changePlayerRanks(playersGoingDown, lowerDivision);
 
-        ranking.put(upperRank, upperRankPlayers);
-        ranking.put(lowerRank, lowerRankPlayers);
+        ranking.put(upperDivision, upperRankMatchmakingProfiles);
+        ranking.put(lowerDivision, lowerRankMatchmakingProfiles);
     }
 
-    private void changePlayerRanks(List<Player> players, Rank rank) {
-        for (Player player : players) {
+    private void changePlayerRanks(List<MatchmakingProfile> matchmakingProfiles, Division division) {
+        for (MatchmakingProfile matchmakingProfile : matchmakingProfiles) {
 //            player.setRank(rank);
         }
     }
 
-    private Map<Rank, Integer> createMoveUpCounts() {
-        Map<Rank, Integer> moveUpCounts = new HashMap<>();
+    private Map<Division, Integer> createMoveUpCounts() {
+        Map<Division, Integer> moveUpCounts = new HashMap<>();
 
-        moveUpCounts.put(Rank.BRONZE_1, 2);
-        moveUpCounts.put(Rank.BRONZE_2, 2);
-        moveUpCounts.put(Rank.SILVER_1, 2);
-        moveUpCounts.put(Rank.SILVER_2, 2);
-        moveUpCounts.put(Rank.GOLD_1, 2);
-        moveUpCounts.put(Rank.GOLD_2, 2);
-        moveUpCounts.put(Rank.PLATINUM_1, 2);
-        moveUpCounts.put(Rank.PLATINUM_2, 2);
-        moveUpCounts.put(Rank.MASTER, 2);
-        moveUpCounts.put(Rank.GRANDMASTER, 2);
+        moveUpCounts.put(Division.BRONZE_1, 2);
+        moveUpCounts.put(Division.BRONZE_2, 2);
+        moveUpCounts.put(Division.SILVER_1, 2);
+        moveUpCounts.put(Division.SILVER_2, 2);
+        moveUpCounts.put(Division.GOLD_1, 2);
+        moveUpCounts.put(Division.GOLD_2, 2);
+        moveUpCounts.put(Division.PLATINUM_1, 2);
+        moveUpCounts.put(Division.PLATINUM_2, 2);
+        moveUpCounts.put(Division.MASTER, 2);
+        moveUpCounts.put(Division.GRANDMASTER, 2);
 
         return moveUpCounts;
     }
 
-    private Map<Rank, Integer> createMoveDownCounts() {
-        Map<Rank, Integer> moveDownCounts = new HashMap<>();
+    private Map<Division, Integer> createMoveDownCounts() {
+        Map<Division, Integer> moveDownCounts = new HashMap<>();
 
-        moveDownCounts.put(Rank.BRONZE_1, 2);
-        moveDownCounts.put(Rank.BRONZE_2, 2);
-        moveDownCounts.put(Rank.SILVER_1, 2);
-        moveDownCounts.put(Rank.SILVER_2, 2);
-        moveDownCounts.put(Rank.GOLD_1, 2);
-        moveDownCounts.put(Rank.GOLD_2, 2);
-        moveDownCounts.put(Rank.PLATINUM_1, 2);
-        moveDownCounts.put(Rank.PLATINUM_2, 2);
-        moveDownCounts.put(Rank.MASTER, 2);
-        moveDownCounts.put(Rank.GRANDMASTER, 2);
+        moveDownCounts.put(Division.BRONZE_1, 2);
+        moveDownCounts.put(Division.BRONZE_2, 2);
+        moveDownCounts.put(Division.SILVER_1, 2);
+        moveDownCounts.put(Division.SILVER_2, 2);
+        moveDownCounts.put(Division.GOLD_1, 2);
+        moveDownCounts.put(Division.GOLD_2, 2);
+        moveDownCounts.put(Division.PLATINUM_1, 2);
+        moveDownCounts.put(Division.PLATINUM_2, 2);
+        moveDownCounts.put(Division.MASTER, 2);
+        moveDownCounts.put(Division.GRANDMASTER, 2);
 
         return moveDownCounts;
     }

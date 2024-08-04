@@ -1,13 +1,13 @@
 package org.example.pvp.interfaces;
 
-import org.example.pvp.model.Player;
-import org.example.pvp.model.Team;
+import org.example.pvp.model.MatchGroup;
+import org.example.pvp.model.MatchmakingProfile;
 
 import java.util.List;
 
 public interface MatchmakingService {
-    void queuePlayers(List<Player> players);
-    void unqueuePlayers(List<Player> players);
+    void queuePlayers(List<MatchmakingProfile> matchmakingProfiles);
+    void unqueuePlayers(List<MatchmakingProfile> matchmakingProfiles);
     boolean isMatchReady();
-    List<Team> fetchTeamsForMatch() throws IllegalStateException;
+    List<MatchGroup> fetchTeamsForMatch() throws IllegalStateException;
 }

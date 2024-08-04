@@ -1,202 +1,202 @@
 package org.example.pvp.services;
 
 import org.example.pvp.interfaces.RankingService;
-import org.example.pvp.model.Player;
-import org.example.pvp.model.Rank;
+import org.example.pvp.model.Division;
+import org.example.pvp.model.MatchmakingProfile;
 
 import java.util.*;
 
 public class VersusRankingService implements RankingService {
-    private final Map<Rank, Set<Player>> ranking = new HashMap<>();
+    private final Map<Division, Set<MatchmakingProfile>> ranking = new HashMap<>();
 
     // TODO: Use a database. This is just for demonstration purposes. In the repository interface implementation, you can add some caching if needed.
-    private final Map<Long, Player> playerCache = new HashMap<>();
+    private final Map<Long, MatchmakingProfile> playerCache = new HashMap<>();
 
-    private final Map<Integer, Rank> rankLowerBoundaries;
+    private final Map<Integer, Division> rankLowerBoundaries;
     private final List<Integer> reversedLowerBoundaries;
 
     private final int MAX_BEST_RANK_SIZE = 10;
 
-    private Player weakestPlayerInBestRank = null;
+    private MatchmakingProfile weakestPlayerRankInBestRanking = null;
 
     public VersusRankingService() {
         this(createRankLowerBoundaries());
     }
 
-    public VersusRankingService(Map<Integer, Rank> rankLowerBoundaries) {
+    public VersusRankingService(Map<Integer, Division> rankLowerBoundaries) {
         this.rankLowerBoundaries = rankLowerBoundaries;
         this.reversedLowerBoundaries = rankLowerBoundaries.keySet().stream().sorted().toList().reversed();
     }
 
     @Override
-    public void addPlayers(List<Player> players) {
-        for (Player player : players) {
-            savePlayer(player.clone());
+    public void addPlayers(List<MatchmakingProfile> matchmakingProfiles) {
+        for (MatchmakingProfile matchmakingProfile : matchmakingProfiles) {
+            savePlayer(matchmakingProfile.clone());
         }
 
-        updateRankings(players);
+        updateRankings(matchmakingProfiles);
     }
 
     @Override
-    public void removePlayers(List<Player> players) {
-        for (Player player : players) {
-            Player existingPlayer = findById(player.getId());
+    public void removePlayers(List<MatchmakingProfile> matchmakingProfiles) {
+        for (MatchmakingProfile matchmakingProfile : matchmakingProfiles) {
+            MatchmakingProfile existingMatchmakingProfile = findById(matchmakingProfile.getId());
 
-            if (existingPlayer.getRank() != null) {
-                ranking.get(existingPlayer.getRank()).remove(existingPlayer);
+            if (existingMatchmakingProfile.getDivision() != null) {
+                ranking.get(existingMatchmakingProfile.getDivision()).remove(existingMatchmakingProfile);
             }
 
-            removePlayer(player);
+            removePlayer(matchmakingProfile);
         }
     }
 
     @Override
-    public void updateRankings(List<Player> players) {
-        for (Player player : players) {
-            Player playerWithOldRating = findById(player.getId());
-            Player playerWithNewRating = player.clone();
+    public void updateRankings(List<MatchmakingProfile> matchmakingProfiles) {
+        for (MatchmakingProfile matchmakingProfile : matchmakingProfiles) {
+            MatchmakingProfile matchmakingProfileWithOldRating = findById(matchmakingProfile.getId());
+            MatchmakingProfile matchmakingProfileWithNewRating = matchmakingProfile.clone();
 
-            removeFromRanking(playerWithOldRating);
+            removeFromRanking(matchmakingProfileWithOldRating);
 
-            Rank matchedRank = calculateRank(playerWithNewRating.getRating());
-            addToRanking(playerWithNewRating, matchedRank);
+            Division matchedDivision = calculateRank(matchmakingProfileWithNewRating.getRating());
+            addToRanking(matchmakingProfileWithNewRating, matchedDivision);
 
-            savePlayer(playerWithNewRating);
+            savePlayer(matchmakingProfileWithNewRating);
         }
     }
 
     @Override
-    public List<Player> getRanking() {
-        List<Player> result = new ArrayList<>();
+    public List<MatchmakingProfile> getRanking() {
+        List<MatchmakingProfile> result = new ArrayList<>();
 
-        for (Rank rank : Rank.ascendingRanks.reversed()) {
-            if (!ranking.containsKey(rank)) {
+        for (Division division : Division.ASCENDING_DIVISIONS.reversed()) {
+            if (!ranking.containsKey(division)) {
                 continue;
             }
 
-            result.addAll(ranking.get(rank));
+            result.addAll(ranking.get(division));
         }
 
         return result;
     }
 
     @Override
-    public List<Player> getRanking(Rank rank) {
-        Set<Player> players = ranking.get(rank);
-        if (players == null) {
+    public List<MatchmakingProfile> getRanking(Division division) {
+        Set<MatchmakingProfile> matchmakingProfiles = ranking.get(division);
+        if (matchmakingProfiles == null) {
             return Collections.emptyList();
         }
 
-        return new ArrayList<>(players);
+        return new ArrayList<>(matchmakingProfiles);
     }
 
-    private void removeFromRanking(Player player) {
-        if (player.getRank() == null) {
+    private void removeFromRanking(MatchmakingProfile matchmakingProfile) {
+        if (matchmakingProfile.getDivision() == null) {
             return;
         }
 
-        Set<Player> rankingSet = ranking.get(player.getRank());
+        Set<MatchmakingProfile> rankingSet = ranking.get(matchmakingProfile.getDivision());
         if (rankingSet == null) return;
 
-        rankingSet.remove(player);
+        rankingSet.remove(matchmakingProfile);
     }
 
-    private void addToRanking(Player player, Rank rank) {
-        if (!ranking.containsKey(rank)) {
-            ranking.put(rank, createSortedSet());
+    private void addToRanking(MatchmakingProfile matchmakingProfile, Division division) {
+        if (!ranking.containsKey(division)) {
+            ranking.put(division, createSortedSet());
         }
 
-        player.setRank(rank);
+        matchmakingProfile.setDivision(division);
 
-        if (rank == Rank.ascendingRanks.getLast()) {
-            handlePlayerInBestRank(player);
+        if (division == Division.ASCENDING_DIVISIONS.getLast()) {
+            handlePlayerInBestRank(matchmakingProfile);
         }
 
-        ranking.get(rank).add(player);
+        ranking.get(division).add(matchmakingProfile);
     }
 
-    private Player findById(long id) {
+    private MatchmakingProfile findById(long id) {
         return playerCache.get(id);
     }
 
-    private void savePlayer(Player player) {
-        playerCache.put(player.getId(), player);
+    private void savePlayer(MatchmakingProfile matchmakingProfile) {
+        playerCache.put(matchmakingProfile.getId(), matchmakingProfile);
     }
 
-    private void removePlayer(Player player) {
-        playerCache.remove(player.getId());
+    private void removePlayer(MatchmakingProfile matchmakingProfile) {
+        playerCache.remove(matchmakingProfile.getId());
     }
 
-    private Rank calculateRank(double rating) {
+    private Division calculateRank(double rating) {
         for (Integer lowerBoundary : reversedLowerBoundaries) {
             if (rating >= lowerBoundary) {
-                Rank matchedRank = rankLowerBoundaries.get(lowerBoundary);
+                Division matchedDivision = rankLowerBoundaries.get(lowerBoundary);
 
-                if (canPromoteToBestRank(rating, matchedRank)) {
-                    return Rank.ascendingRanks.getLast();
+                if (canPromoteToBestRank(rating, matchedDivision)) {
+                    return Division.ASCENDING_DIVISIONS.getLast();
                 }
 
-                return matchedRank;
+                return matchedDivision;
             }
         }
 
         throw new IllegalStateException("Rank not found for rating: " + rating);
     }
 
-    private void handlePlayerInBestRank(Player player) {
-        Set<Player> bestPlayers = ranking.get(Rank.ascendingRanks.getLast());
-        if (bestPlayers == null || bestPlayers.isEmpty()) {
-            weakestPlayerInBestRank = player;
+    private void handlePlayerInBestRank(MatchmakingProfile matchmakingProfile) {
+        Set<MatchmakingProfile> bestMatchmakingProfiles = ranking.get(Division.ASCENDING_DIVISIONS.getLast());
+        if (bestMatchmakingProfiles == null || bestMatchmakingProfiles.isEmpty()) {
+            weakestPlayerRankInBestRanking = matchmakingProfile;
 
             return;
         }
 
-        if (bestPlayers.size() < MAX_BEST_RANK_SIZE) {
-            weakestPlayerInBestRank = bestPlayers.stream().min(Comparator.comparing(Player::getRating)).orElse(player);
+        if (bestMatchmakingProfiles.size() < MAX_BEST_RANK_SIZE) {
+            weakestPlayerRankInBestRanking = bestMatchmakingProfiles.stream().min(Comparator.comparing(MatchmakingProfile::getRating)).orElse(matchmakingProfile);
 
             return;
         }
 
-        bestPlayers.remove(weakestPlayerInBestRank);
-        bestPlayers.add(player);
+        bestMatchmakingProfiles.remove(weakestPlayerRankInBestRanking);
+        bestMatchmakingProfiles.add(matchmakingProfile);
 
-        Rank rankBeforeBest = Rank.ascendingRanks.get(Rank.ascendingRanks.size() - 2);
-        addToRanking(weakestPlayerInBestRank, rankBeforeBest);
+        Division divisionBeforeBest = Division.ASCENDING_DIVISIONS.get(Division.ASCENDING_DIVISIONS.size() - 2);
+        addToRanking(weakestPlayerRankInBestRanking, divisionBeforeBest);
 
-        weakestPlayerInBestRank = bestPlayers.stream().min(Comparator.comparing(Player::getRating)).orElse(player);
+        weakestPlayerRankInBestRanking = bestMatchmakingProfiles.stream().min(Comparator.comparing(MatchmakingProfile::getRating)).orElse(matchmakingProfile);
     }
 
-    private boolean canPromoteToBestRank(double rating, Rank matchedRank) {
-        Rank rankBeforeLast = Rank.ascendingRanks.get(Rank.ascendingRanks.size() - 2);
-        if (matchedRank != rankBeforeLast) {
+    private boolean canPromoteToBestRank(double rating, Division matchedDivision) {
+        Division divisionBeforeLast = Division.ASCENDING_DIVISIONS.get(Division.ASCENDING_DIVISIONS.size() - 2);
+        if (matchedDivision != divisionBeforeLast) {
             return false;
         }
 
-        Set<Player> bestPlayers = ranking.get(Rank.ascendingRanks.getLast());
-        if (bestPlayers == null || bestPlayers.isEmpty() || bestPlayers.size() < MAX_BEST_RANK_SIZE) {
+        Set<MatchmakingProfile> bestMatchmakingProfiles = ranking.get(Division.ASCENDING_DIVISIONS.getLast());
+        if (bestMatchmakingProfiles == null || bestMatchmakingProfiles.isEmpty() || bestMatchmakingProfiles.size() < MAX_BEST_RANK_SIZE) {
             return true;
         }
 
-        return rating > weakestPlayerInBestRank.getRating();
+        return rating > weakestPlayerRankInBestRanking.getRating();
     }
 
-    private static Map<Integer, Rank> createRankLowerBoundaries() {
-        Map<Integer, Rank> rankBoundaries = new HashMap<>();
+    private static Map<Integer, Division> createRankLowerBoundaries() {
+        Map<Integer, Division> rankBoundaries = new HashMap<>();
 
-        rankBoundaries.put(0, Rank.BRONZE_1);
-        rankBoundaries.put(50, Rank.BRONZE_2);
-        rankBoundaries.put(100, Rank.SILVER_1);
-        rankBoundaries.put(150, Rank.SILVER_2);
-        rankBoundaries.put(200, Rank.GOLD_1);
-        rankBoundaries.put(250, Rank.GOLD_2);
-        rankBoundaries.put(300, Rank.PLATINUM_1);
-        rankBoundaries.put(350, Rank.PLATINUM_2);
-        rankBoundaries.put(400, Rank.MASTER);
+        rankBoundaries.put(0, Division.BRONZE_1);
+        rankBoundaries.put(50, Division.BRONZE_2);
+        rankBoundaries.put(100, Division.SILVER_1);
+        rankBoundaries.put(150, Division.SILVER_2);
+        rankBoundaries.put(200, Division.GOLD_1);
+        rankBoundaries.put(250, Division.GOLD_2);
+        rankBoundaries.put(300, Division.PLATINUM_1);
+        rankBoundaries.put(350, Division.PLATINUM_2);
+        rankBoundaries.put(400, Division.MASTER);
 
         return rankBoundaries;
     }
 
-    private Set<Player> createSortedSet() {
-        return new TreeSet<>(Comparator.comparing(Player::getRating).reversed().thenComparing(Player::getId));
+    private Set<MatchmakingProfile> createSortedSet() {
+        return new TreeSet<>(Comparator.comparing(MatchmakingProfile::getRating).reversed().thenComparing(MatchmakingProfile::getId));
     }
 }
