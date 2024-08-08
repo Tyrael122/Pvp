@@ -4,6 +4,7 @@ import org.example.pvp.interfaces.RankingService;
 import org.example.pvp.model.MatchmakingProfile;
 import org.example.pvp.model.Division;
 import org.example.pvp.model.MatchGroup;
+import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 // TODO: Make this thing implement an interface to clients who will query for it's stats.
+@Service
 public class StatisticsService {
 
     private double sumOfDifferenceInRatingBetweenTeams = 0;

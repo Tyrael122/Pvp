@@ -6,6 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface PlayerRankingRepository extends JpaRepository<MatchmakingProfile, Long> {
+public interface MatchmakingProfileRepository extends JpaRepository<MatchmakingProfile, Long> {
     List<MatchmakingProfile> findAllByRankingMode(RankingMode rankingMode);
 }

@@ -3,14 +3,16 @@ package org.example.pvp.services;
 import org.example.pvp.interfaces.RankingService;
 import org.example.pvp.model.Division;
 import org.example.pvp.model.MatchmakingProfile;
+import org.example.pvp.repositories.MatchmakingProfileRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+@Service
 public class VersusRankingService implements RankingService {
-    private final Map<Division, Set<MatchmakingProfile>> ranking = new HashMap<>();
-
-    // TODO: Use a database. This is just for demonstration purposes. In the repository interface implementation, you can add some caching if needed.
-    private final Map<Long, MatchmakingProfile> playerCache = new HashMap<>();
+    private final Map<Division, List<MatchmakingProfile>> ranking = new HashMap<>();
+    private boolean areRanksSorted = false;
 
     private final Map<Integer, Division> rankLowerBoundaries;
     private final List<Integer> reversedLowerBoundaries;
@@ -19,19 +21,25 @@ public class VersusRankingService implements RankingService {
 
     private MatchmakingProfile weakestPlayerRankInBestRanking = null;
 
-    public VersusRankingService() {
-        this(createRankLowerBoundaries());
+    private final MatchmakingProfileRepository matchmakingProfileRepository;
+
+    @Autowired
+    public VersusRankingService(MatchmakingProfileRepository matchmakingProfileRepository) {
+        this(createRankLowerBoundaries(), matchmakingProfileRepository);
     }
 
-    public VersusRankingService(Map<Integer, Division> rankLowerBoundaries) {
+    public VersusRankingService(Map<Integer, Division> rankLowerBoundaries, MatchmakingProfileRepository matchmakingProfileRepository) {
         this.rankLowerBoundaries = rankLowerBoundaries;
         this.reversedLowerBoundaries = rankLowerBoundaries.keySet().stream().sorted().toList().reversed();
+        this.matchmakingProfileRepository = matchmakingProfileRepository;
+
+        initializeRankings();
     }
 
     @Override
     public void addPlayers(List<MatchmakingProfile> matchmakingProfiles) {
         for (MatchmakingProfile matchmakingProfile : matchmakingProfiles) {
-            savePlayer(matchmakingProfile.clone());
+            saveMatchmakingProfile(matchmakingProfile);
         }
 
         updateRankings(matchmakingProfiles);
@@ -46,27 +54,32 @@ public class VersusRankingService implements RankingService {
                 ranking.get(existingMatchmakingProfile.getDivision()).remove(existingMatchmakingProfile);
             }
 
-            removePlayer(matchmakingProfile);
+            // This method has the semantics of removing the player from the ranking, not deleting his profile. This is wrong.
+            // In the current implementation, this is necessary so as not to load him again in the next fetchRanking call,
+            // but it could be worked around by adding a flag to the profile, or by storing the deleted profiles in a separate table.
+//            removeMatchmakingProfile(matchmakingProfile);
         }
     }
 
     @Override
     public void updateRankings(List<MatchmakingProfile> matchmakingProfiles) {
+        areRanksSorted = false;
+
         for (MatchmakingProfile matchmakingProfile : matchmakingProfiles) {
-            MatchmakingProfile matchmakingProfileWithOldRating = findById(matchmakingProfile.getId());
-            MatchmakingProfile matchmakingProfileWithNewRating = matchmakingProfile.clone();
+            MatchmakingProfile matchmakingProfileWithOldRank = findById(matchmakingProfile.getId());
+            removeFromRanking(matchmakingProfileWithOldRank);
 
-            removeFromRanking(matchmakingProfileWithOldRating);
+            Division matchedDivision = calculateRank(matchmakingProfile.getRating());
+            addToRanking(matchmakingProfile, matchedDivision);
 
-            Division matchedDivision = calculateRank(matchmakingProfileWithNewRating.getRating());
-            addToRanking(matchmakingProfileWithNewRating, matchedDivision);
-
-            savePlayer(matchmakingProfileWithNewRating);
+            saveMatchmakingProfile(matchmakingProfile);
         }
     }
 
     @Override
     public List<MatchmakingProfile> getRanking() {
+        sortRanksIfNeeded();
+
         List<MatchmakingProfile> result = new ArrayList<>();
 
         for (Division division : Division.ASCENDING_DIVISIONS.reversed()) {
@@ -82,7 +95,9 @@ public class VersusRankingService implements RankingService {
 
     @Override
     public List<MatchmakingProfile> getRanking(Division division) {
-        Set<MatchmakingProfile> matchmakingProfiles = ranking.get(division);
+        sortRanksIfNeeded();
+
+        List<MatchmakingProfile> matchmakingProfiles = ranking.get(division);
         if (matchmakingProfiles == null) {
             return Collections.emptyList();
         }
@@ -95,15 +110,20 @@ public class VersusRankingService implements RankingService {
             return;
         }
 
-        Set<MatchmakingProfile> rankingSet = ranking.get(matchmakingProfile.getDivision());
+        List<MatchmakingProfile> rankingSet = ranking.get(matchmakingProfile.getDivision());
         if (rankingSet == null) return;
 
-        rankingSet.remove(matchmakingProfile);
+        for (MatchmakingProfile profile : rankingSet) {
+            if (profile.getId() == matchmakingProfile.getId()) {
+                rankingSet.remove(profile);
+                break;
+            }
+        }
     }
 
     private void addToRanking(MatchmakingProfile matchmakingProfile, Division division) {
         if (!ranking.containsKey(division)) {
-            ranking.put(division, createSortedSet());
+            ranking.put(division, new ArrayList<>());
         }
 
         matchmakingProfile.setDivision(division);
@@ -116,15 +136,15 @@ public class VersusRankingService implements RankingService {
     }
 
     private MatchmakingProfile findById(long id) {
-        return playerCache.get(id);
+        return matchmakingProfileRepository.findById(id).orElseThrow();
     }
 
-    private void savePlayer(MatchmakingProfile matchmakingProfile) {
-        playerCache.put(matchmakingProfile.getId(), matchmakingProfile);
+    private void saveMatchmakingProfile(MatchmakingProfile matchmakingProfile) {
+        matchmakingProfileRepository.save(matchmakingProfile);
     }
 
-    private void removePlayer(MatchmakingProfile matchmakingProfile) {
-        playerCache.remove(matchmakingProfile.getId());
+    private void removeMatchmakingProfile(MatchmakingProfile matchmakingProfile) {
+        matchmakingProfileRepository.deleteById(matchmakingProfile.getId());
     }
 
     private Division calculateRank(double rating) {
@@ -144,7 +164,7 @@ public class VersusRankingService implements RankingService {
     }
 
     private void handlePlayerInBestRank(MatchmakingProfile matchmakingProfile) {
-        Set<MatchmakingProfile> bestMatchmakingProfiles = ranking.get(Division.ASCENDING_DIVISIONS.getLast());
+        List<MatchmakingProfile> bestMatchmakingProfiles = ranking.get(Division.ASCENDING_DIVISIONS.getLast());
         if (bestMatchmakingProfiles == null || bestMatchmakingProfiles.isEmpty()) {
             weakestPlayerRankInBestRanking = matchmakingProfile;
 
@@ -172,12 +192,45 @@ public class VersusRankingService implements RankingService {
             return false;
         }
 
-        Set<MatchmakingProfile> bestMatchmakingProfiles = ranking.get(Division.ASCENDING_DIVISIONS.getLast());
+        List<MatchmakingProfile> bestMatchmakingProfiles = ranking.get(Division.ASCENDING_DIVISIONS.getLast());
         if (bestMatchmakingProfiles == null || bestMatchmakingProfiles.isEmpty() || bestMatchmakingProfiles.size() < MAX_BEST_RANK_SIZE) {
             return true;
         }
 
         return rating > weakestPlayerRankInBestRanking.getRating();
+    }
+
+    private void initializeRankings() {
+        List<MatchmakingProfile> matchmakingProfiles = matchmakingProfileRepository.findAll();
+
+        for (MatchmakingProfile matchmakingProfile : matchmakingProfiles) {
+            Division division = matchmakingProfile.getDivision();
+
+            if (!ranking.containsKey(division)) {
+                ranking.put(division, new ArrayList<>());
+            }
+
+            ranking.get(division).add(matchmakingProfile);
+        }
+    }
+
+    private void sortRanksIfNeeded() {
+        if (!areRanksSorted) {
+            sortRanks();
+
+            areRanksSorted = true;
+        }
+    }
+
+    private void sortRanks() {
+        for (Division division : Division.ASCENDING_DIVISIONS) {
+            List<MatchmakingProfile> matchmakingProfiles = ranking.get(division);
+            if (matchmakingProfiles == null) {
+                continue;
+            }
+
+            matchmakingProfiles.sort(Comparator.comparing(MatchmakingProfile::getRating).reversed());
+        }
     }
 
     private static Map<Integer, Division> createRankLowerBoundaries() {
@@ -194,9 +247,5 @@ public class VersusRankingService implements RankingService {
         rankBoundaries.put(400, Division.MASTER);
 
         return rankBoundaries;
-    }
-
-    private Set<MatchmakingProfile> createSortedSet() {
-        return new TreeSet<>(Comparator.comparing(MatchmakingProfile::getRating).reversed().thenComparing(MatchmakingProfile::getId));
     }
 }

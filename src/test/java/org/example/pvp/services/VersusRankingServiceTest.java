@@ -3,7 +3,13 @@ package org.example.pvp.services;
 import org.example.pvp.interfaces.RankingService;
 import org.example.pvp.model.Division;
 import org.example.pvp.model.MatchmakingProfile;
+import org.example.pvp.repositories.MatchmakingProfileRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,9 +18,19 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@SpringBootTest
 class VersusRankingServiceTest {
 
-    private final RankingService service = new VersusRankingService(createRankLowerBoundaries());
+    @Autowired
+    private MatchmakingProfileRepository matchmakingProfileRepository;
+
+    private RankingService service;
+
+    @BeforeEach
+    void beforeAll() {
+        service = new VersusRankingService(createRankLowerBoundaries(), matchmakingProfileRepository);
+    }
 
     @Test
     void shouldAddPlayersToRank() {
@@ -78,7 +94,7 @@ class VersusRankingServiceTest {
     }
 
     @Test
-    void shouldRemovePlayerFromRank() {
+    void shouldRemoveMatchmakingProfileFromRank() {
         MatchmakingProfile matchmakingProfile = new MatchmakingProfile(1, 50);
 
         List<MatchmakingProfile> matchmakingProfiles = List.of(matchmakingProfile);
@@ -91,7 +107,7 @@ class VersusRankingServiceTest {
     }
 
     @Test
-    void shouldRemovePlayerFromRankAndRankThem() {
+    void shouldRemoveMatchmakingProfileFromRankAndRankThem() {
         MatchmakingProfile matchmakingProfile1 = new MatchmakingProfile(1, 50);
         MatchmakingProfile matchmakingProfile2 = new MatchmakingProfile(2, 60);
 
@@ -163,6 +179,29 @@ class VersusRankingServiceTest {
         matchmakingProfiles.add(matchmakingProfile3);
 
         service.addPlayers(matchmakingProfiles);
+
+        List<MatchmakingProfile> ranking = service.getRanking();
+
+        assertEquals(3, ranking.size());
+        assertEquals(matchmakingProfile3.getId(), ranking.get(0).getId());
+        assertEquals(matchmakingProfile2.getId(), ranking.get(1).getId());
+        assertEquals(matchmakingProfile1.getId(), ranking.get(2).getId());
+    }
+
+    @Test
+    void shouldSaveRankingInRepository() {
+        MatchmakingProfile matchmakingProfile1 = new MatchmakingProfile(1, 50);
+        MatchmakingProfile matchmakingProfile2 = new MatchmakingProfile(2, 60);
+        MatchmakingProfile matchmakingProfile3 = new MatchmakingProfile(3, 70);
+
+        List<MatchmakingProfile> matchmakingProfiles = new ArrayList<>();
+        matchmakingProfiles.add(matchmakingProfile1);
+        matchmakingProfiles.add(matchmakingProfile2);
+        matchmakingProfiles.add(matchmakingProfile3);
+
+        service.addPlayers(matchmakingProfiles);
+
+        service = new VersusRankingService(createRankLowerBoundaries(), matchmakingProfileRepository);
 
         List<MatchmakingProfile> ranking = service.getRanking();
 

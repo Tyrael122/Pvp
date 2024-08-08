@@ -8,12 +8,14 @@ import org.example.pvp.interfaces.WinnerCalculator;
 import org.example.pvp.model.Match;
 import org.example.pvp.model.MatchGroup;
 import org.example.pvp.model.MatchmakingProfile;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
+@Service
 public class VersusMatchService implements MatchService {
     private final List<Match> currentMatches = new ArrayList<>();
 

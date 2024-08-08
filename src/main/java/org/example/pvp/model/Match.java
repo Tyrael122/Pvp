@@ -1,14 +1,23 @@
 package org.example.pvp.model;
 
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
+@Entity
 public class Match {
+
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    @OneToMany
     private List<MatchGroup> matchGroups;
 
+    @OneToOne
     private MatchGroup winner;
 
     private MatchStatus matchStatus;
@@ -16,6 +25,9 @@ public class Match {
     private LocalDateTime startTime;
     private LocalDateTime scheduledEndTime;
     private LocalDateTime endTime;
+
+    public Match() {
+    }
 
     public Match(List<MatchGroup> matchGroups) {
         this.matchGroups = matchGroups;

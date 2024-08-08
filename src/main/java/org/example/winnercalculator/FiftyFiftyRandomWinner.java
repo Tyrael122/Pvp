@@ -2,9 +2,11 @@ package org.example.winnercalculator;
 
 import org.example.pvp.interfaces.WinnerCalculator;
 import org.example.pvp.model.MatchGroup;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public class FiftyFiftyRandomWinner implements WinnerCalculator {
 
     private static final int C_FACTOR = 150;

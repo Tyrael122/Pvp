@@ -6,12 +6,15 @@ import org.example.pvp.model.MatchmakingProfile;
 import org.example.pvp.stats.StatisticsService;
 import org.example.pvp.interfaces.MatchmakingService;
 import org.example.pvp.model.Range;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
 @Slf4j
+@Service
 public class VersusMatchmakingService implements MatchmakingService {
     private final List<WaitingTeam> waitingTeams = new ArrayList<>();
     private final List<WaitingTeam> completeWaitingTeams = new ArrayList<>();
@@ -22,6 +25,7 @@ public class VersusMatchmakingService implements MatchmakingService {
 
     private final int NUM_USERS_IN_TEAM;
 
+    @Autowired
     public VersusMatchmakingService(StatisticsService statisticsService) {
         this(3);
 

@@ -31,6 +31,10 @@ public class MatchmakingProfile implements Cloneable {
         this(id, 180);
     }
 
+    public MatchmakingProfile(RankingMode rankingMode) {
+        this.rankingMode = rankingMode;
+    }
+
     public MatchmakingProfile(long id, double rating) {
         this.id = id;
         this.rating = rating;

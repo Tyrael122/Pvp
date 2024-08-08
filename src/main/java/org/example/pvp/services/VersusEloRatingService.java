@@ -4,19 +4,24 @@ import lombok.Getter;
 import org.example.pvp.interfaces.EloRatingService;
 import org.example.pvp.model.MatchGroup;
 import org.example.pvp.model.MatchmakingProfile;
+import org.example.pvp.repositories.MatchmakingProfileRepository;
 import org.example.pvp.stats.StatisticsService;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public class VersusEloRatingService implements EloRatingService {
 
     private static final int K_FACTOR = 100;
     private static final int C_FACTOR = 150;
 
     private final StatisticsService statisticsService;
+    private final MatchmakingProfileRepository matchmakingProfileRepository;
 
-    public VersusEloRatingService(StatisticsService statisticsService) {
+    public VersusEloRatingService(StatisticsService statisticsService, MatchmakingProfileRepository matchmakingProfileRepository) {
         this.statisticsService = statisticsService;
+        this.matchmakingProfileRepository = matchmakingProfileRepository;
     }
 
     @Override
@@ -56,6 +61,8 @@ public class VersusEloRatingService implements EloRatingService {
         for (MatchmakingProfile matchmakingProfile : matchGroup.getMatchmakingProfiles()) {
             matchmakingProfile.setRating(newRating);
         }
+
+        matchmakingProfileRepository.saveAll(matchGroup.getMatchmakingProfiles());
     }
 
     private double calculateExpectedOutcome(double ratingA, double ratingB) {

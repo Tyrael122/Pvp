@@ -1,14 +1,26 @@
 package org.example.pvp.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
+@Entity
 public class MatchGroup {
+    @Id
+    @GeneratedValue
+    private long id;
 
+    @OneToMany
     private List<MatchmakingProfile> matchmakingProfiles;
+
+    public MatchGroup() {
+    }
 
     public static MatchGroup of(List<MatchmakingProfile> matchmakingProfiles) {
         return new MatchGroup(matchmakingProfiles);
