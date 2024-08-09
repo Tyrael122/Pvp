@@ -40,10 +40,6 @@ public class Match {
         this.scheduledEndTime = scheduledEndTime;
     }
 
-    public void draw() {
-        end(null);
-    }
-
     public void end(MatchGroup winner) {
         this.endTime = LocalDateTime.now();
         this.matchStatus = MatchStatus.FINISHED;

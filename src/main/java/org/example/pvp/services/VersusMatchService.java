@@ -7,7 +7,9 @@ import org.example.pvp.interfaces.RankingService;
 import org.example.pvp.interfaces.WinnerCalculator;
 import org.example.pvp.model.Match;
 import org.example.pvp.model.MatchGroup;
+import org.example.pvp.model.MatchStatus;
 import org.example.pvp.model.MatchmakingProfile;
+import org.example.pvp.repositories.MatchRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -23,10 +25,15 @@ public class VersusMatchService implements MatchService {
     private final EloRatingService eloRatingService;
     private final RankingService rankingService;
 
-    public VersusMatchService(WinnerCalculator winnerCalculator, EloRatingService eloRatingService, RankingService rankingService) {
+    private final MatchRepository matchRepository;
+
+    public VersusMatchService(WinnerCalculator winnerCalculator, EloRatingService eloRatingService, RankingService rankingService, MatchRepository matchRepository) {
         this.winnerCalculator = winnerCalculator;
         this.eloRatingService = eloRatingService;
         this.rankingService = rankingService;
+        this.matchRepository = matchRepository;
+        
+        initializeCurrentMatches();
     }
 
     @Override
@@ -35,7 +42,7 @@ public class VersusMatchService implements MatchService {
 //        match.start(LocalDateTime.now().plusHours(24));
         match.start(LocalDateTime.now().plusSeconds(1));
 
-        currentMatches.add(match);
+        addMatch(match);
 
         log.debug("Match started: {}", match);
     }
@@ -68,7 +75,7 @@ public class VersusMatchService implements MatchService {
             eloRatingService.updateRatings(match.getMatchGroups(), winner);
             updateRankings(match);
 
-            match.end(winner);
+            endMatch(match, winner);
 
             log.debug("Match ended: {}", match);
 
@@ -91,6 +98,21 @@ public class VersusMatchService implements MatchService {
         }
 
         return currentMatches.getFirst().getScheduledEndTime();
+    }
+
+    private void initializeCurrentMatches() {
+        List<Match> matches = matchRepository.findAllByMatchStatus(MatchStatus.IN_PROGRESS);
+        currentMatches.addAll(matches);
+    }
+
+    private void addMatch(Match match) {
+        currentMatches.add(match);
+        matchRepository.save(match);
+    }
+
+    private void endMatch(Match match, MatchGroup winner) {
+        match.end(winner);
+        matchRepository.save(match);
     }
 
     private void updateRankings(Match match) {

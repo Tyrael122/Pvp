@@ -2,8 +2,10 @@ package org.example.pvp.services;
 
 import org.example.pvp.model.MatchGroup;
 import org.example.pvp.model.MatchmakingProfile;
+import org.example.pvp.repositories.MatchmakingProfileRepository;
 import org.example.pvp.stats.StatisticsService;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
 
@@ -11,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 class VersusEloRatingServiceTest {
-    private final VersusEloRatingService eloRatingService = new VersusEloRatingService(mock(StatisticsService.class));
+    private final VersusEloRatingService eloRatingService = new VersusEloRatingService(mock(StatisticsService.class), mock(MatchmakingProfileRepository.class));
 
     @Test
     void shouldDistributeRatingsToWinnerAndLoser() {
