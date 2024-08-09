@@ -9,12 +9,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 class VersusMatchmakingServiceTest {
 
     private int lastIdUsed = 0;
 
-    private final MatchmakingService matchmakingService = new VersusMatchmakingService(3);
+    private final MatchmakingService matchmakingService = new VersusMatchmakingService(3, mock(WaitingTeamRepository.class));
 
     @Test
     void shouldPair6IntoTeamAndLeaveOneInQueue() {

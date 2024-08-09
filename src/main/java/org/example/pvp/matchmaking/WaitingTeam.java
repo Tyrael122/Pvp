@@ -1,5 +1,9 @@
 package org.example.pvp.matchmaking;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import lombok.Data;
 import org.example.pvp.model.MatchGroup;
 import org.example.pvp.model.MatchmakingProfile;
@@ -11,9 +15,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
+@Entity
 class WaitingTeam {
 
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    @OneToMany
     private List<WaitingPlayer> waitingPlayers = new ArrayList<>();
+
     private double averageRating;
 
     public void bufferAverageRating() {

@@ -7,6 +7,7 @@ import org.example.pvp.interfaces.RankingService;
 import org.example.pvp.model.*;
 import org.example.pvp.repositories.MatchmakingProfileRepository;
 import org.example.pvp.repositories.PlayerRepository;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;

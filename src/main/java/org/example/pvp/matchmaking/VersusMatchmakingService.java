@@ -25,15 +25,20 @@ public class VersusMatchmakingService implements MatchmakingService {
 
     private final int NUM_USERS_IN_TEAM;
 
+    private final WaitingTeamRepository waitingTeamRepository;
+
     @Autowired
-    public VersusMatchmakingService(StatisticsService statisticsService) {
-        this(3);
+    public VersusMatchmakingService(StatisticsService statisticsService, WaitingTeamRepository waitingTeamRepository) {
+        this(3, waitingTeamRepository);
 
         this.statisticsService = statisticsService;
     }
 
-    public VersusMatchmakingService(int numUsersInTeam) {
+    public VersusMatchmakingService(int numUsersInTeam, WaitingTeamRepository waitingTeamRepository) {
         this.NUM_USERS_IN_TEAM = numUsersInTeam;
+        this.waitingTeamRepository = waitingTeamRepository;
+
+        fetchWaitingTeamsFromRepository();
     }
 
     @Override
@@ -56,6 +61,8 @@ public class VersusMatchmakingService implements MatchmakingService {
         } else {
             waitingTeams.add(waitingTeam);
         }
+
+        waitingTeamRepository.save(waitingTeam);
     }
 
     @Override
@@ -67,6 +74,8 @@ public class VersusMatchmakingService implements MatchmakingService {
 
     private void unqueuePlayer(MatchmakingProfile matchmakingProfile) {
         log.debug("Request to unqueue player: {}", matchmakingProfile);
+
+        waitingTeamRepository.deleteById(matchmakingProfile.getId());
 
         boolean hasFoundPlayerAtReadyMatches = removeFromReadyMatches(matchmakingProfile);
         if (hasFoundPlayerAtReadyMatches) {
@@ -108,6 +117,8 @@ public class VersusMatchmakingService implements MatchmakingService {
         List<MatchGroup> matchGroups = readyMatches.removeFirst();
 
         tryToDecreaseAverageRatingBetweenTeams(matchGroups);
+
+        removeFromRepository(matchGroups);
 
         statisticsService.addFormedMatch(matchGroups);
 
@@ -250,6 +261,19 @@ public class VersusMatchmakingService implements MatchmakingService {
                 waitingTeams.remove(i);
 
                 return;
+            }
+        }
+    }
+
+    private void fetchWaitingTeamsFromRepository() {
+        List<WaitingTeam> storedWaitingTeams = waitingTeamRepository.findAll();
+        waitingTeams.addAll(storedWaitingTeams);
+    }
+
+    private void removeFromRepository(List<MatchGroup> matchGroups) {
+        for (MatchGroup matchGroup : matchGroups) {
+            for (MatchmakingProfile matchmakingProfile : matchGroup.getMatchmakingProfiles()) {
+                waitingTeamRepository.deleteById(matchmakingProfile.getId());
             }
         }
     }
