@@ -21,7 +21,7 @@ public class VersusMatchmakingService implements MatchmakingService {
 
     private final List<List<MatchGroup>> readyMatches = new ArrayList<>();
 
-    private StatisticsService statisticsService;
+    private final StatisticsService statisticsService;
 
     private final int NUM_USERS_IN_TEAM;
 

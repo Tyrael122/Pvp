@@ -10,11 +10,14 @@ import org.example.pvp.model.MatchGroup;
 import org.example.pvp.model.MatchStatus;
 import org.example.pvp.model.MatchmakingProfile;
 import org.example.pvp.repositories.MatchRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 @Slf4j
 @Service
@@ -27,20 +30,28 @@ public class VersusMatchService implements MatchService {
 
     private final MatchRepository matchRepository;
 
-    public VersusMatchService(WinnerCalculator winnerCalculator, EloRatingService eloRatingService, RankingService rankingService, MatchRepository matchRepository) {
+    private final Supplier<LocalDateTime> matchEndSupplier;
+
+    public VersusMatchService(WinnerCalculator winnerCalculator, EloRatingService eloRatingService, RankingService rankingService, MatchRepository matchRepository, Supplier<LocalDateTime> matchEndSupplier) {
         this.winnerCalculator = winnerCalculator;
         this.eloRatingService = eloRatingService;
         this.rankingService = rankingService;
         this.matchRepository = matchRepository;
-        
+
+        this.matchEndSupplier = matchEndSupplier;
+
         initializeCurrentMatches();
+    }
+
+    @Autowired
+    public VersusMatchService(WinnerCalculator winnerCalculator, EloRatingService eloRatingService, RankingService rankingService, MatchRepository matchRepository) {
+        this(winnerCalculator, eloRatingService, rankingService, matchRepository, () -> LocalDateTime.now().plusHours(24));
     }
 
     @Override
     public void startMatch(List<MatchGroup> matchGroups) {
         Match match = new Match(matchGroups);
-//        match.start(LocalDateTime.now().plusHours(24));
-        match.start(LocalDateTime.now().plusSeconds(1));
+        match.start(matchEndSupplier.get());
 
         addMatch(match);
 

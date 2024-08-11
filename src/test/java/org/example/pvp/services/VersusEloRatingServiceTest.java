@@ -5,7 +5,6 @@ import org.example.pvp.model.MatchmakingProfile;
 import org.example.pvp.repositories.MatchmakingProfileRepository;
 import org.example.pvp.stats.StatisticsService;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
 

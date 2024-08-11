@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -14,7 +15,7 @@ public class Match {
     @GeneratedValue
     private Long id;
 
-    @OneToMany
+    @OneToMany(cascade = CascadeType.ALL)
     private List<MatchGroup> matchGroups;
 
     @OneToOne
@@ -30,7 +31,7 @@ public class Match {
     }
 
     public Match(List<MatchGroup> matchGroups) {
-        this.matchGroups = matchGroups;
+        this.matchGroups = new ArrayList<>(matchGroups);
     }
 
     public void start(LocalDateTime scheduledEndTime) {

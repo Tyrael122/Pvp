@@ -1,7 +1,6 @@
 package org.example.pvp.matchmaking;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.example.pvp.model.MatchmakingProfile;
 
