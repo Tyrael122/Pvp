@@ -56,9 +56,6 @@ class VersusEloRatingServiceTest {
     }
 
     private MatchmakingProfile createPlayer(double rating) {
-        MatchmakingProfile matchmakingProfile = new MatchmakingProfile(0);
-        matchmakingProfile.setRating(rating);
-
-        return matchmakingProfile;
+        return new MatchmakingProfile(rating);
     }
 }

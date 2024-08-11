@@ -1,9 +1,6 @@
 package org.example.pvp.matchmaking;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import lombok.Data;
 import org.example.pvp.model.MatchGroup;
 import org.example.pvp.model.MatchmakingProfile;
@@ -22,12 +19,17 @@ class WaitingTeam {
     @GeneratedValue
     private Long id;
 
-    @OneToMany
+    @OneToMany(cascade = CascadeType.ALL)
     private List<WaitingPlayer> waitingPlayers = new ArrayList<>();
 
     private double averageRating;
 
     public void bufferAverageRating() {
+        if (waitingPlayers.isEmpty()) {
+            averageRating = 0;
+            return;
+        }
+
         double sum = 0;
 
         for (WaitingPlayer player : waitingPlayers) {
@@ -39,6 +41,10 @@ class WaitingTeam {
 
     // TODO: Since this is used in the mergeTeams method in comparisons, it's result could be cached.
     public Duration calculateAverageWaitTime() {
+        if (waitingPlayers.isEmpty()) {
+            return Duration.of(0, ChronoUnit.SECONDS);
+        }
+
         Duration sum = Duration.of(0, ChronoUnit.SECONDS);
 
         LocalDateTime now = LocalDateTime.now();

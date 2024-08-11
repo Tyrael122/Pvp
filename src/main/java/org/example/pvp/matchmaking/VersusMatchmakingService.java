@@ -29,13 +29,12 @@ public class VersusMatchmakingService implements MatchmakingService {
 
     @Autowired
     public VersusMatchmakingService(StatisticsService statisticsService, WaitingTeamRepository waitingTeamRepository) {
-        this(3, waitingTeamRepository);
-
-        this.statisticsService = statisticsService;
+        this(3, statisticsService, waitingTeamRepository);
     }
 
-    public VersusMatchmakingService(int numUsersInTeam, WaitingTeamRepository waitingTeamRepository) {
+    public VersusMatchmakingService(int numUsersInTeam, StatisticsService statisticsService, WaitingTeamRepository waitingTeamRepository) {
         this.NUM_USERS_IN_TEAM = numUsersInTeam;
+        this.statisticsService = statisticsService;
         this.waitingTeamRepository = waitingTeamRepository;
 
         fetchWaitingTeamsFromRepository();
@@ -267,7 +266,19 @@ public class VersusMatchmakingService implements MatchmakingService {
 
     private void fetchWaitingTeamsFromRepository() {
         List<WaitingTeam> storedWaitingTeams = waitingTeamRepository.findAll();
-        waitingTeams.addAll(storedWaitingTeams);
+
+        List<Long> idsToDelete = new ArrayList<>();
+        for (WaitingTeam waitingTeam : storedWaitingTeams) {
+            if (waitingTeam.getWaitingPlayers().isEmpty()) {
+                idsToDelete.add(waitingTeam.getId());
+
+                continue;
+            }
+
+            waitingTeams.add(waitingTeam);
+        }
+
+        waitingTeamRepository.deleteAllById(idsToDelete);
     }
 
     private void removeFromRepository(List<MatchGroup> matchGroups) {

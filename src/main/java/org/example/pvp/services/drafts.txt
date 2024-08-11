@@ -44,7 +44,9 @@ match service:
 - test if ends matches correctly
 - test if it can calculate the next match end time correctly
 
-tests to make manually:
+integration tests:
+eloRatingService, should save the new rating in the database
+match service should save match in the database
 
 
 50

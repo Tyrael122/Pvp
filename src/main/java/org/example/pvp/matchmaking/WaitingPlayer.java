@@ -1,9 +1,6 @@
 package org.example.pvp.matchmaking;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.example.pvp.model.MatchmakingProfile;

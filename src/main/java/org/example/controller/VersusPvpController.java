@@ -63,12 +63,12 @@ public class VersusPvpController {
 
         matchmakingProfile.setAutoQueueOn(true);
 
+        matchmakingProfileRepository.save(matchmakingProfile);
+
         log.info("PVP turned on for player {}", playerId);
 
         matchmakingService.queuePlayers(List.of(matchmakingProfile));
         rankingService.addPlayers(List.of(matchmakingProfile));
-
-        matchmakingProfileRepository.save(matchmakingProfile);
     }
 
     @PostMapping(ENDPOINT_PREFIX + "/{playerId}/toggle")
