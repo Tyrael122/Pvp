@@ -25,8 +25,6 @@ public class VersusPvpController {
     private final PlayerRepository playerRepository;
     private final MatchmakingProfileRepository matchmakingProfileRepository;
 
-//    private final List<MatchmakingProfile> matchmakingProfiles = new ArrayList<>();
-
     public VersusPvpController(RankingService rankingService, MatchmakingService matchmakingService, MatchService matchService, PlayerRepository playerRepository, MatchmakingProfileRepository matchmakingProfileRepository) {
         this.rankingService = rankingService;
         this.matchmakingService = matchmakingService;
@@ -135,15 +133,24 @@ public class VersusPvpController {
     private void endMatches() {
         List<Match> endedMatches = matchService.endMatchesReadyToEnd();
 
+        List<Long> matchmakingProfilesIds = new ArrayList<>();
+
         for (Match matches : endedMatches) {
             for (MatchGroup matchGroup : matches.getMatchGroups()) {
                 for (MatchmakingProfile matchmakingProfile : matchGroup.getMatchmakingProfiles()) {
-                    if (matchmakingProfile.isAutoQueueOn()) {
-                        matchmakingService.queuePlayers(List.of(matchmakingProfile));
-
-                        log.info("Player {} auto queued.", matchmakingProfile.getId());
-                    }
+                    matchmakingProfilesIds.add(matchmakingProfile.getId());
                 }
+            }
+        }
+
+        log.debug("Matchmaking profiles to auto queue: {}", matchmakingProfilesIds);
+        var matchmakingProfiles = matchmakingProfileRepository.findAllById(matchmakingProfilesIds);
+
+        for (var matchmakingProfile : matchmakingProfiles) {
+            if (matchmakingProfile.isAutoQueueOn()) {
+                matchmakingService.queuePlayers(List.of(matchmakingProfile));
+
+                log.info("Player {} auto queued.", matchmakingProfile.getId());
             }
         }
     }

@@ -45,7 +45,8 @@ public class VersusMatchService implements MatchService {
 
     @Autowired
     public VersusMatchService(WinnerCalculator winnerCalculator, EloRatingService eloRatingService, RankingService rankingService, MatchRepository matchRepository) {
-        this(winnerCalculator, eloRatingService, rankingService, matchRepository, () -> LocalDateTime.now().plusHours(24));
+//        this(winnerCalculator, eloRatingService, rankingService, matchRepository, () -> LocalDateTime.now().plusHours(24));
+        this(winnerCalculator, eloRatingService, rankingService, matchRepository, () -> LocalDateTime.now().plusSeconds(30));
     }
 
     @Override
